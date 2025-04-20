@@ -1,5 +1,5 @@
 /output*
 .python*
 __pycache__
-analyze_log_ws.*
+analyze_log_ws.code-workspace
 /.vscode

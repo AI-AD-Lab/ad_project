@@ -47,13 +47,15 @@ def load_data(log_folder_path , file_dict):
     result_log = file_dict['result']
 
     try:
-        return pd.read_csv(log_folder_path / state_log)
-        # if state_data.empty:
-        #     print("DATAEMPTY")
-        #     return -1
-    except EmptyDataError:
-        print(f"❌ {sceanrio_file_name}: statelog - 빈 파일 (헤더도 없음) → 건너뜀")
-        return -1
+        data =  pd.read_csv(log_folder_path / state_log)
+        if data.empty:
+            print("DATAEMPTY")
+            raise EmptyDataError('No data')
+        return data
     
-    # return state_log
+    except EmptyDataError:
+        print(f"❌ {state_log}: statelog - 빈 파일 (헤더도 없음) → 건너뜀")
+
+    
+    return state_log
 

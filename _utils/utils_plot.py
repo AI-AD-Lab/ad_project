@@ -66,6 +66,21 @@ def create_colored_line_segments(x, y, z, velocity, cmap='plasma', norm=None):
     lc.set_linewidth(2)
     return lc
 
+# Simple DataFrame 2d plot
+def dataframe_2d_plot(df, col1='time (sec)', col2='speed'):
+    plt.figure(figsize=(6, 5))
+    plt.plot(df[col1], df[col2], marker='o')
+    plt.title(f"{col1} vs {col2}")
+    plt.xlim(df[col1].min(), df[col1].max())
+    plt.ylim(df[col2].min(), df[col2].max())
+
+    plt.xlabel(f"{col1}")
+    plt.ylabel(f"{col2}")
+    
+    plt.autoscale(False)
+    plt.show()
+    plt.close()
+
 
 class PLOTING():
 
@@ -186,6 +201,9 @@ class PLOTING():
 
         self.fig.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"✅ 그림 저장됨: {save_path}")
+
+    def get_trajectory_data(self):
+        return self.all_data
 
     def __del__(self):
         if self.fig:
