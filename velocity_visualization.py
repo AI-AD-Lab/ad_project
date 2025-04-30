@@ -94,16 +94,8 @@ def plot_3d_line_equal_unit(state_log_df, elev=30, azim=70, save=False, fig_name
             'RotationX (deg)', 
             'RotationY (deg)', 
             'RotationZ (deg)', 
-            'Throttle [0..1]', 
-            'Brake [0..1]', 
-            'FrontWheelAngle (deg)', 
-            'Exceeding Speed (km/h)', 
-            'Deficit Speed (km/h)', 
-            'TimeToCollision (sec)', 
-            'VtV Distance (m)', 
-            'WayOff Distance (m)']
     ----------------------------------------
-    This function extract vehicle trajectory of each entitiy and show 3D graph
+    This function extract vehicle trajectory of each entity and show 3D graph
 
     state_log_df:Pandas dataframe
     elev: related to camera view of 3d plot
@@ -116,16 +108,16 @@ def plot_3d_line_equal_unit(state_log_df, elev=30, azim=70, save=False, fig_name
     position_y = POSITIONS[1] # dataframe column key 'PositionY (m)'
     position_z = POSITIONS[2] # dataframe column key 'PositionZ (m)'
 
-    entitiy_data_dict = {
+    entity_data_dict = {
         entity: state_log_df[state_log_df['Entity'] == entity].reset_index(drop=True)
         for entity in pd.unique(state_log_df['Entity'])
     }
 
-    base_x = entitiy_data_dict["Ego"][position_x].iloc[0]
-    base_y = entitiy_data_dict["Ego"][position_y].iloc[0]
-    base_z = entitiy_data_dict["Ego"][position_z].iloc[0]
+    base_x = entity_data_dict["Ego"][position_x].iloc[0]
+    base_y = entity_data_dict["Ego"][position_y].iloc[0]
+    base_z = entity_data_dict["Ego"][position_z].iloc[0]
 
-    colors = plt.cm.tab10(np.linspace(0, 1, len(entitiy_data_dict)))
+    colors = plt.cm.tab10(np.linspace(0, 1, len(entity_data_dict)))
     green = mcolors.to_rgb("green")
     blue = mcolors.to_rgb("blue")
     red = mcolors.to_rgb("red")
@@ -140,7 +132,7 @@ def plot_3d_line_equal_unit(state_log_df, elev=30, azim=70, save=False, fig_name
     max_velocity = max(total_velocity)
 
     all_x, all_y, all_z = [], [], []
-    for idx, (key, position_data) in enumerate(entitiy_data_dict.items()):
+    for idx, (key, position_data) in enumerate(entity_data_dict.items()):
 
         # 상대 좌표로 이동
         x = position_data[position_x] - base_x
@@ -243,26 +235,26 @@ def main(save=False):
         event_log = scenario_log_files['eventlog']
         result_log = scenario_log_files['result']
 
-        sceanrio_file_name = None
+        scenario_file_name = None
         if result_log:
             try:
                 result_data = pd.read_csv(scenario_folder_path / result_log)
-                sceanrio_file_name = result_data["File Name"][0]
+                scenario_file_name = result_data["File Name"][0]
             except EmptyDataError:
                 print(f"❌ {result_log}: result_log - 빈 파일 (헤더도 없음) → 건너뜀")
                 continue
         else:
-            sceanrio_file_name = scenario_log_folder
+            scenario_file_name = scenario_log_folder
 
         try:
             state_data = pd.read_csv(scenario_folder_path / state_log)
             if state_data.empty:
                 continue
         except EmptyDataError:
-            print(f"❌ {sceanrio_file_name}: statelog - 빈 파일 (헤더도 없음) → 건너뜀")
+            print(f"❌ {scenario_file_name}: statelog - 빈 파일 (헤더도 없음) → 건너뜀")
             continue
 
-        plot_3d_line_equal_unit(state_data, elev=30, azim=70, save=save, fig_name=sceanrio_file_name)
+        plot_3d_line_equal_unit(state_data, elev=30, azim=70, save=save, fig_name=scenario_file_name)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -272,4 +264,3 @@ if __name__ == "__main__":
     main(save=args.save)
     # main()
 
-# %%

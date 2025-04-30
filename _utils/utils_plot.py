@@ -95,6 +95,9 @@ class PLOTING():
             for entity in pd.unique(state_log_df['Entity'])
         }
         
+        print(f"Entities: {self.entitiy_data_dict.keys()}")
+        print(pd.unique(state_log_df['Entity']))
+
         self.base_x = self.entitiy_data_dict["Ego"][self.position_x].iloc[0]
         self.base_y = self.entitiy_data_dict["Ego"][self.position_y].iloc[0]
         self.base_z = self.entitiy_data_dict["Ego"][self.position_z].iloc[0]
@@ -124,7 +127,8 @@ class PLOTING():
 
         all_x, all_y, all_z = [], [], []
         for idx, (key, position_data) in enumerate(self.entitiy_data_dict.items()):
-
+            
+            print(key)
             # 상대 좌표로 이동
             x = position_data[self.position_x] - self.base_x
             y = position_data[self.position_y] - self.base_y
@@ -187,8 +191,7 @@ class PLOTING():
             self.save_plot(fig_name)
 
         if show:
-            print("GOOD SHOW")
-            # plt.show()
+            plt.show()
         
         plt.close(self.fig)
 

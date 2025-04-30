@@ -57,8 +57,8 @@ def compute_speed_with_vel(df,
     dz = df[z_col]
 
     speed = np.sqrt(dx**2 + dy**2 + dz**2)
-    
-    return speed.bfill()
+    df['speed'] = speed.bfill()
+    return df
 
 
 class LogDataset(Dataset):
@@ -83,7 +83,7 @@ class LogDataset(Dataset):
             self.simulation_folder = self._latest_folder(self.log_folder_path)
 
         # 시나리오 폴더 안에 있는 log 파일들 처리
-        # sep_log_file output -> {"mapname_scenarioname: 
+        # sep_log_file output -> {"MapName_ScenarioName: 
         #       {{'eventlog':'eventlog_file_name'}"
         #       {'statelog':'statelog_file_name'}"
         #       {'result':'result_file_name'}"},

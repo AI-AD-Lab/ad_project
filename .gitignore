@@ -3,3 +3,6 @@
 __pycache__
 analyze_log_ws.code-workspace
 /.vscode
+/new_dataset
+/morai
+/model
