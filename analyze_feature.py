@@ -34,21 +34,73 @@ model = MultiVariableRNN(input_size=input_size, num_classes=num_classes)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-best_loss = float('inf')
-best_model = None
+trained_model = Path('./model/best_model_20250430171456.pth')
+if os.path.exists(trained_model):
+    model.load_state_dict(torch.load(trained_model))
+    print("Model loaded successfully.")
+    model.eval()  # Set the model to evaluation mode
+else:
+    print("Model file not found. Training from scratch.")
+    raise FileNotFoundError(f"Model file not found: {trained_model}")
 
-# Training loop
-for epoch in range(num_epochs):
-    total_loss = 0.0
+output_list = []
 
-    for data, label in loader:
-        # Zero the gradients
-        optimizer.zero_grad()
-        # Forward pass
-        outputs = model(data)
-        
-        log_probs = F.log_softmax(outputs, dim=1)
-        targets = F.one_hot(label, num_classes=outputs.size(1)).float()
-        loss = criterion(log_probs, targets)
+total_label = []
+total_predicted_label = []
+
+
+for data, label in loader:
+    # Zero the gradients
+    optimizer.zero_grad()
+    # Forward pass
+    outputs = model(data)
+    tmp_output = outputs.detach().numpy()
+
+    softmax_output = F.softmax(outputs, dim=1).detach().numpy()
+    tmp_output = softmax_output.reshape(-1, 9)
+    tmp_output = np.argmax(tmp_output, axis=1)
+    tmp_output = tmp_output.reshape(-1, 1)
+
+    total_predicted_label.append(tmp_output)
+    total_label.append(label.numpy())
+#%%
+total_label = np.array(total_label)
+total_label = total_label.reshape(-1, 1)
+print(total_label.shape)
+
+total_predicted_label = np.array(total_predicted_label)
+total_predicted_label = total_predicted_label.reshape(-1, 1)
+print(total_predicted_label.shape)
+
+#%%
+accuracy = np.sum(np.array(total_predicted_label) == np.array(total_label)) / len(total_label)
+print(f"Accuracy: {accuracy:.4f}")
+# %%
+output_list = np.array(output_list)
+output_list = output_list.reshape(-1, 9)
+
+output_predict_list = np.argmax(output_list, axis=1)
+output_predict_list = output_predict_list.reshape(-1, 1)
+
+print(output_predict_list)
+# %%
+for real, label in zip(total_label, output_predict_list):
+    print(f"Probabilities: {real}, Predicted Label: {label}")
+
+# %%
+# dbscan 
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
+
+from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_samples
+from sklearn.metrics import pairwise_distances
+from sklearn.metrics import pairwise_distances_argmin_min
+from sklearn.metrics import pairwise_distances_argmin
+from sklearn.metrics import pairwise_distances_argmin_min
+from sklearn.metrics import pairwise_distances_argmin_min
+
 
 

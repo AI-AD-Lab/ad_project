@@ -138,7 +138,7 @@ class LogDataset(Dataset):
             'AccelerationZ(EntityCoord) (m/s2)',
         ])
         statelog_data = statelog_data.fillna(0)
-
+        print(f'used_columns: {statelog_data.columns}')
         data_tensor = torch.tensor(statelog_data.values, dtype=torch.float32)
         
         return data_tensor, label
