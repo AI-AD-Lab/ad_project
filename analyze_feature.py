@@ -87,20 +87,6 @@ print(output_predict_list)
 for real, label in zip(total_label, output_predict_list):
     print(f"Probabilities: {real}, Predicted Label: {label}")
 
-# %%
-# dbscan 
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
-
-from sklearn.metrics import silhouette_score
-from sklearn.metrics import silhouette_samples
-from sklearn.metrics import pairwise_distances
-from sklearn.metrics import pairwise_distances_argmin_min
-from sklearn.metrics import pairwise_distances_argmin
-from sklearn.metrics import pairwise_distances_argmin_min
-from sklearn.metrics import pairwise_distances_argmin_min
 
 
 

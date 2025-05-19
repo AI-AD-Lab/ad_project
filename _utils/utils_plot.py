@@ -213,3 +213,56 @@ class PLOTING():
             plt.close(self.fig)
             print("🧹 Figure closed on object deletion.")
 
+def time_base_plot(data:pd.DataFrame,
+            save_path:str|None=None, ):
+    
+    base_axis = 'time (sec)'
+    first_axis = 'FrontWheelAngle (deg)'
+    second_axis = 'PositionX (m)'
+    third_axis = 'PositionY (m)'
+
+    fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+
+    # 첫번째 그림: Front Wheel Angle
+    # 범위를 -1~ 1로 제한
+    axs[0, 0].set_ylim(-1, 1)
+    axs[0, 0].plot(data[base_axis], data[first_axis], label=first_axis, color='blue')
+    axs[0, 0].set_title(f'{first_axis} Over {base_axis}')
+    axs[0, 0].set_xlabel(base_axis)
+    axs[0, 0].set_ylabel(f'{first_axis}')
+    axs[0, 0].grid()
+    axs[0, 0].legend()
+
+    # 두번째 그림: 2D plot of x and y coordinates
+    axs[0, 1].plot(data[second_axis], data[third_axis], label='Trajectory', color='green')
+    axs[0, 1].set_title('2D Trajectory Plot')
+    axs[0, 1].set_xlabel(second_axis)
+    axs[0, 1].set_ylabel(third_axis)
+    axs[0, 1].grid()
+    axs[0, 1].legend()
+
+    # 세번째 그림: Time vs PositionX
+    axs[1, 0].plot(data[base_axis], data[second_axis], label=second_axis, color='red')
+    axs[1, 0].set_title(f'Time vs {second_axis}')
+    axs[1, 0].set_xlabel(base_axis)
+    axs[1, 0].set_ylabel(second_axis)
+    axs[1, 0].grid()
+    axs[1, 0].legend()
+
+    # 네번째 그림: Time vs PositionY
+    axs[1, 1].plot(data[base_axis], data['PositionY (m)'], label='PositionY', color='purple')
+    axs[1, 1].set_title('Time vs PositionY')
+    axs[1, 1].set_xlabel(base_axis)
+    axs[1, 1].set_ylabel('PositionY (m)')
+    axs[1, 1].grid()
+    axs[1, 1].legend()
+
+    plt.tight_layout()
+    if save_path:
+        if not save_path.endswith('.png'):
+            save_path += '.png'
+        plt.savefig(save_path)
+        plt.close()
+    else:
+        plt.show()
+        plt.close()

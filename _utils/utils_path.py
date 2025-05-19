@@ -17,7 +17,7 @@ def sep_log_file(log_folder_path):
     log_name_dict = {}
 
     log_files = os.listdir(log_folder_path)
-    statelog_base_names = [ remove_numeric_parts(statelog.rstrip('_eventlog.csv')) 
+    statelog_base_names = [ statelog.rstrip('_eventlog.csv') 
                           for statelog in log_files 
                           if statelog.endswith('eventlog.csv')]
 

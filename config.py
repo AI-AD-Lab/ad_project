@@ -34,6 +34,6 @@ config = {
         'AccelerationY(EntityCoord) (m/s2)',
         'AccelerationZ(EntityCoord) (m/s2)', 
         'RotationZ (deg)', 'FrontWheelAngle (deg)'],
-
-    
 }
+
+
