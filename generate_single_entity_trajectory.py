@@ -53,7 +53,7 @@ def make_dst_path():
 
 if __name__ == "__main__":
 
-    test_path =  LOG_FOLDER_PATH / 'simulation_t9_left'
+    test_path =  LOG_FOLDER_PATH / 'simulation_cutin'
     scenario_log_names = sep_log_file(test_path)
 
     dst_dir_path = make_dst_path()

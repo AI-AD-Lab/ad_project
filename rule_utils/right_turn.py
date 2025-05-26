@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
 
-def is_right_turn(df: pd.DataFrame, angle_threshold=15, yaw_delta_threshold=20):
+def is_right_turn(df: pd.DataFrame, 
+                  yaw_delta_threshold=-70,
+                  angle_diff_threshold=-15,
+                  ):
     """
     차량의 trajectory DataFrame을 받아 우회전 여부를 판단합니다.
 
@@ -14,20 +17,19 @@ def is_right_turn(df: pd.DataFrame, angle_threshold=15, yaw_delta_threshold=20):
     - bool: True if right turn detected
     """
 
-    # 1. 초기 이동 방향 계산
-    dx = df['PositionX (m)'].iloc[5] - df['PositionX (m)'].iloc[0]
-    dy = df['PositionY (m)'].iloc[5] - df['PositionY (m)'].iloc[0]
-    heading_angle = np.degrees(np.arctan2(dy, dx))  # 초기 주행 방향 (deg)
-
-    # 2. 전체 이동 벡터
-    dx_total = df['PositionX (m)'].iloc[-1] - df['PositionX (m)'].iloc[0]
-    dy_total = df['PositionY (m)'].iloc[-1] - df['PositionY (m)'].iloc[0]
-    final_angle = np.degrees(np.arctan2(dy_total, dx_total))  # 전체 주행 각도 (deg)
-
-    # 3. 궤적 회전 각도 변화량 계산
-    angle_diff = (final_angle - heading_angle + 360) % 360
-    if angle_diff > 180:
-        angle_diff -= 360  # [-180, +180] 범위로 정규화
+    # 3. 전체 궤적 이동 방향 각도 차
+    start_idx = df[df['time (sec)'] > 0.05].index[0]
+    vec_start = np.array([
+        df['PositionX (m)'].iloc[start_idx] - df['PositionX (m)'].iloc[0],
+        df['PositionY (m)'].iloc[start_idx] - df['PositionY (m)'].iloc[0]
+    ])
+    vec_end = np.array([
+        df['PositionX (m)'].iloc[-1] - df['PositionX (m)'].iloc[0],
+        df['PositionY (m)'].iloc[-1] - df['PositionY (m)'].iloc[0]
+    ])
+    angle_start = np.degrees(np.arctan2(vec_start[1], vec_start[0]))
+    angle_end = np.degrees(np.arctan2(vec_end[1], vec_end[0]))
+    angle_diff = ((angle_end - angle_start + 180) % 360) - 180  # [-180, +180]
 
     # 4. yaw 변화량 확인
     yaw_change = df['RotationZ (deg)'].iloc[-1] - df['RotationZ (deg)'].iloc[0]
@@ -35,9 +37,9 @@ def is_right_turn(df: pd.DataFrame, angle_threshold=15, yaw_delta_threshold=20):
     if yaw_change > 180:
         yaw_change -= 360
 
-    print(f"Angle Diff: {angle_diff}, Yaw Change: {yaw_change}")
+    # print(f"Angle Diff: {angle_diff}, Yaw Change: {yaw_change}")
 
     # 5. 판단 조건: 오른쪽으로 일정 각도 이상 회전 && yaw도 증가
-    if abs(angle_diff) > 10 and angle_diff < 0 and yaw_change < yaw_delta_threshold:
+    if angle_diff < angle_diff_threshold and yaw_change < yaw_delta_threshold:
         return True
     return False

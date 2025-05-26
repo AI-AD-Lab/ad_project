@@ -5,8 +5,8 @@ import pandas as pd
 # 차량의 궤적을 기반으로 회전 방향을 판단하는 함수들
 
 def is_left_turn(df: pd.DataFrame,
-                 yaw_delta_threshold=-20,
-                 angle_diff_threshold=-10,
+                 yaw_delta_threshold=70,
+                 angle_diff_threshold=15,
                  stop_threshold=0.2,
                  stop_duration=0.05):
     """
@@ -48,7 +48,7 @@ def is_left_turn(df: pd.DataFrame,
     angle_end = np.degrees(np.arctan2(vec_end[1], vec_end[0]))
     angle_diff = ((angle_end - angle_start + 180) % 360) - 180  # [-180, +180]
 
-    # 4. yaw 변화량 (좌회전은 음수, 360 wraparound 고려)
+    # 4. yaw 변화량 (좌회전은 양수, 360 wraparound 고려)
     yaw_start = df['RotationZ (deg)'].iloc[0]
     yaw_end = df['RotationZ (deg)'].iloc[-1]
     yaw_change = ((yaw_end - yaw_start + 180) % 360) - 180
@@ -56,11 +56,8 @@ def is_left_turn(df: pd.DataFrame,
     print(f"Angle Diff: {angle_diff}, Yaw Change: {yaw_change}, Stopped: {has_stopped}")
     
     # 5. 좌회전 판단
+    # 주 조건: 궤적 회전 각도 > 10 도 && yaw 변화량 > 80
     if angle_diff > angle_diff_threshold and yaw_change > yaw_delta_threshold:
         return True
-
-    # 보조 조건: 정지 후 출발 + 방향 회전 감지
-    if has_stopped and angle_diff < -5 and yaw_change < -10:
-        return True
-
+ 
     return False
