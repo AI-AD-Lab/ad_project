@@ -368,11 +368,9 @@ def draw_ay_plot(df, save_path:None|str|Path = None):
 
     plt.show()
 
-import matplotlib.pyplot as plt
-import numpy as np
 
 def detect_llc_by_ay_wz(df, ay_col='AccelerationY(EntityCoord) (m/s2)', wz_col='wz', sampling_hz=60,
-                        ay_threshold=-0.5, wz_max_limit=0.08, duration_thresh=30):
+                        ay_threshold=-0.5, wz_max_limit=0.1, duration_thresh=30):
     """
     ay/wz 기반 왼쪽 차선 변경(LLC) 감지 함수
 
