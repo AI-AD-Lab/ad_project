@@ -24,7 +24,7 @@ used_columns: Index(['PositionX (m)', 'PositionY (m)', 'PositionZ (m)', 'Rotatio
 '''
 
 MORAISIM_PATH = Path(__file__).resolve().parent.parent
-SINGLE_SCENARIO_LOG_DATA = MORAISIM_PATH / "rule_single_scenario_logs"       
+SINGLE_SCENARIO_LOG_DATA = MORAISIM_PATH / "syn_log_data"     # 시간이 일정한 데이터 파일: SYNC  
 
 # %%
 
@@ -123,10 +123,7 @@ def compute_ay_wz_from_xyz(df: pd.DataFrame):
     - df: ay, wz가 추가된 DataFrame
     """
 
-    # 1. 속도 계산 (v = dx/dt)
-    df['time (sec)'] = df.index * 0.016666
-    dt = 1.0 / 60
-
+    dt = 0.02
 
     vx = df['VelocityX(EntityCoord) (km/h)'] * 1000 / 3600  # m/s
     vy = df['VelocityY(EntityCoord) (km/h)'] * 1000 / 3600  # m/s
@@ -223,9 +220,6 @@ def detect_right_lane_change_vector(df,
     return False
 
 
-created_single_entity_dir = SINGLE_SCENARIO_LOG_DATA / 'created_20250522174927_cutin'
-all_single_entity_file = os.listdir(created_single_entity_dir)
-all_single_entity_file = [file for file in all_single_entity_file if not file.endswith('label.csv')]
 
 def detect_llc_with_continuous_lateral_motion(df,
                                               lateral_threshold=2.0,
@@ -369,8 +363,8 @@ def draw_ay_plot(df, save_path:None|str|Path = None):
     plt.show()
 
 
-def detect_llc_by_ay_wz(df, ay_col='AccelerationY(EntityCoord) (m/s2)', wz_col='wz', sampling_hz=60,
-                        ay_threshold=-0.5, wz_max_limit=0.1, duration_thresh=30):
+def detect_llc_by_ay_wz(df, ay_col='AccelerationY(EntityCoord) (m/s2)', wz_col='wz',
+                        sampling_hz=50, ay_threshold=-0.5, wz_max_limit=0.8, duration_thresh=30):
     """
     ay/wz 기반 왼쪽 차선 변경(LLC) 감지 함수
 
@@ -386,7 +380,6 @@ def detect_llc_by_ay_wz(df, ay_col='AccelerationY(EntityCoord) (m/s2)', wz_col='
     """
 
     ay = df[ay_col]
-    wz = df[wz_col]
 
     # 조건 1: ay가 threshold보다 작게 내려간 프레임 수
     active_ay = (ay < ay_threshold).astype(int)
@@ -399,19 +392,86 @@ def detect_llc_by_ay_wz(df, ay_col='AccelerationY(EntityCoord) (m/s2)', wz_col='
         else:
             count = 0
 
-    # 조건 2: yaw rate가 너무 크지 않음 (회전이 아님)
-    wz_max = wz.abs().max()
 
-    if max_seq >= duration_thresh and wz_max < wz_max_limit:
-        print(f"✅ LLC 감지됨 | ay 지속 프레임: {max_seq}, wz 최대값: {wz_max:.4f}")
+    if max_seq >= duration_thresh: #and wz_max < wz_max_limit:
+        print(f"✅ LLC 감지됨 | ay 지속 프레임: {max_seq},")
         return True
 
-    print(f"❌ LLC 아님 | ay 지속 프레임: {max_seq}, wz 최대값: {wz_max:.4f}")
+    print(f"❌ LLC 아님 | ay 지속 프레임: {max_seq}, ")
     return False
+
+def detect_lane_change_by_ay_direction(
+    df,
+    ay_col='AccelerationY(EntityCoord) (m/s2)',
+    sampling_hz=50,
+    threshold_neg=-0.3,
+    threshold_pos=+0.3,
+    duration_sec=1
+):
+    """
+    ay만을 기반으로 좌우 차선 변경 판단 (지속적 ay 변화 기반)
+
+    Parameters:
+    - df: DataFrame containing ay
+    - ay_col: lateral acceleration 컬럼명
+    - sampling_hz: 데이터 주파수 (Hz)
+    - threshold_neg: 음의 임계값 (RLC 후보)
+    - threshold_pos: 양의 임계값 (LLC 후보)
+    - duration_sec: 최소 지속 시간 (초 단위)
+
+    Returns:
+    - 'LLC' | 'RLC' | 'None'
+    """
+
+    ay = df[ay_col].values
+    min_frames = int(duration_sec * sampling_hz)
+
+    def find_first_event(condition_array):
+        count = 0
+        serial = 0
+        for i, cond in enumerate(condition_array):
+            if cond:
+                count += 1
+                if count >= min_frames and count > serial:
+                    serial = count
+                    idx = i - count + 1
+            else:
+                count = 0
+
+        if serial != 0:
+            return serial
+        return None
+
+    # 조건 배열
+    ay_neg = ay < threshold_neg # DH
+    ay_pos = ay > threshold_pos
+
+    # 최초 이벤트 인덱스 탐지
+    neg_start = find_first_event(ay_neg)
+    pos_start = find_first_event(ay_pos)
+
+    if (neg_start is None) or (pos_start is None):
+        return 'None'
+
+    if neg_start < pos_start:
+        return "RLC"
+    elif pos_start < neg_start:
+        return "LLC"
+
 
 output_save_dir = Path('./output2/accy_wz/')
 
+created_single_entity_dir = SINGLE_SCENARIO_LOG_DATA / 'simulation_lanechange'
+all_single_entity_file = os.listdir(created_single_entity_dir)
+all_single_entity_file = [file for file in all_single_entity_file if file.endswith('statelog.csv')]
+
+print(all_single_entity_file)
+
+#%%
 for file in all_single_entity_file:
+
+    print(file)
+
     file = Path(file)
     file_path = created_single_entity_dir / file
     base_name = file.stem
@@ -422,8 +482,6 @@ for file in all_single_entity_file:
 
 
     data = pd.read_csv(file_path)
-    data = normalize_time(data)
-    data = data[180:]  
 
     # 데이터가 일정 속도 이상부터 시작하도록 필터링
     
@@ -440,9 +498,9 @@ for file in all_single_entity_file:
     time_base_plot(dd)
     detect_left_lane_change_vector(dd)
     detect_llc_by_ay_wz(dd)
-    # draw_ay_plot(dd)
-    # draw_wz_plot(dd)
-
+    draw_ay_plot(dd)
+    draw_wz_plot(dd)
+    print(detect_lane_change_by_ay_direction(dd))
     
 #     time_base_plot(data, save_path=f"./output2/wheel/{file.replace('.csv', '')}_plot.png")
     # label = rule_based_classifier(ex_data)
