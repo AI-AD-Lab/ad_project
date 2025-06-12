@@ -266,3 +266,37 @@ def time_base_plot(data:pd.DataFrame,
     else:
         plt.show()
         plt.close()
+
+
+def draw_ay_plot(df, save_path:None|str|Path = None):
+    """
+    Yaw Rate (wz)를 시간에 따라 시각화해주는 함수
+
+    Parameters:
+    - df: DataFrame containing wz와 time 값
+    - time_col: 시간 컬럼 이름 (기본: 'time (sec)')
+    - wz_col: wz 컬럼 이름 (기본: 'wz')
+    - title: 그래프 제목
+    """
+
+    plt.figure(figsize=(10, 4))
+    plt.plot(df['time (sec)'], df['AccelerationY(EntityCoord) (m/s2)'], label='Acc Y', color='tab:blue')
+    plt.axhline(0, color='gray', linestyle='--', linewidth=0.8)
+
+    # 시각적 가이드 라인 (논문 기준)
+    # plt.axhline(0.3, color='green', linestyle=':', linewidth=1, label='LT threshold (+0.3 rad/s)')
+    # plt.axhline(-0.3, color='red', linestyle=':', linewidth=1, label='RT threshold (−0.3 rad/s)')
+
+    plt.xlabel('Time (sec)')
+    plt.ylabel('Yaw Rate (rad/s)')
+    plt.title('Yaw Rate (ay) over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path)
+        plt.close()
+        return 
+
+    plt.show()

@@ -25,8 +25,6 @@ def input_scenario_type():
     print("5: Roundabout - 회전교차로")
     print("6: Lane Change - Left")
     print("7: Lane Change - Right")
-    print("8: Merge - Left")
-    print("9: Merge - Right")
     print("10: Discard ")
     reply = input("Please Enter Number to continue...")
     try:

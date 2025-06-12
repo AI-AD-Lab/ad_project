@@ -1,10 +1,11 @@
 /output*
 .python*
-__pycache__
 analyze_log_ws.code-workspace
 /.vscode
 /new_dataset
 /morai
 /model
 /.venv
-.v
+.v**
+__pycache__
+*/__pycache__/
