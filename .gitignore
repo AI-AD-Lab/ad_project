@@ -7,5 +7,6 @@ analyze_log_ws.code-workspace
 /model
 /.venv
 .v**
-__pycache__
+__pycache__/
 */__pycache__/
+**/__pycache__/

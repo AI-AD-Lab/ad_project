@@ -11,7 +11,6 @@ from _utils.utils_plot import time_base_plot, draw_ay_plot
 from rule_utils.left_turn import *
 from rule_utils.right_turn import *
 
-from pathlib import Path
 
 '''
 used_columns: Index(['PositionX (m)', 'PositionY (m)', 'PositionZ (m)', 'RotationZ (deg)',
@@ -20,7 +19,7 @@ used_columns: Index(['PositionX (m)', 'PositionY (m)', 'PositionZ (m)', 'Rotatio
 
 # 기본 경로 설정
 MORAISIM_PATH = Path(__file__).resolve().parent.parent
-SINGLE_SCENARIO_SYNLOG_DATA_ROOT = MORAISIM_PATH /  'sample_scenario_logs_250610'  # 시간이 일정한 데이터 파일: SYNC  
+SINGLE_SCENARIO_SYNLOG_DATA_ROOT = MORAISIM_PATH /  'TOTAL_SCNARIO'  # 시간이 일정한 데이터 파일: SYNC
 
 # 세부 경로 설정
 
@@ -90,7 +89,7 @@ def detect_left_turn(
                 count = 0
 
         return starting_points if starting_points else None
- 
+
 
     ay_neg = ay < left_threshold # 임계값보다 낮은 경우 -> 왼쪽 가속도
 
@@ -127,11 +126,11 @@ def draw_rotz_plot(df, save_path:None|str|Path = None):
     # plt.legend()
     # plt.grid(True)
     # plt.tight_layout()
-    
+
     if save_path:
         plt.savefig(save_path)
         plt.close()
-        return 
+        return
 
     plt.show()
 
@@ -144,7 +143,7 @@ for dir_path in driving_trajectory_dir_list:
 
     dir_path = Path(dir_path)
     scenario_all_log_files = os.listdir(dir_path)
-    state_log_files = [statelog for statelog in scenario_all_log_files 
+    state_log_files = [statelog for statelog in scenario_all_log_files
                        if statelog.endswith('statelog.csv')]
 
     count = 0
