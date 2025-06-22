@@ -22,7 +22,7 @@ def is_left_turn(df: pd.DataFrame,
     Returns:
     - bool: 좌회전이면 True
     """
-    
+
     # 1. 속도 계산
     dx = df['PositionX (m)'].diff()
     dy = df['PositionY (m)'].diff()
@@ -54,13 +54,13 @@ def is_left_turn(df: pd.DataFrame,
     yaw_change = ((yaw_end - yaw_start + 180) % 360) - 180
 
     print(f"Angle Diff: {angle_diff}, Yaw Change: {yaw_change}, Stopped: {has_stopped}")
-    
+
     # 5. 좌회전 판단
     # 주 조건: 궤적 회전 각도 > 10 도 && yaw 변화량 > 80
     if angle_diff > angle_diff_threshold and yaw_change > yaw_delta_threshold:
-        return True
- 
-    return False
+        return 1
+
+    return 0
 
 def detect_left_turn(
     df,
@@ -82,8 +82,8 @@ def detect_left_turn(
     - duration_sec: 최소 지속 시간 (초 단위)
     """
 
-    df_copy = df.loc[:, ~data.columns.isin(['Entity'])].copy()
-    df_rolling = df_copy.rolling(100).mean().bfill()
+    df_copy = df.loc[:, ~df.columns.isin(['Entity'])].copy()
+    df_rolling = df_copy.rolling(rolling_window).mean().bfill()
     df_rolling['time (sec)'] = df_rolling.index * (1/sampling_hz)
 
     ay = df_rolling[ay_col].values
@@ -104,7 +104,7 @@ def detect_left_turn(
                 count = 0
 
         return starting_points if starting_points else None
- 
+
 
     ay_neg = ay < left_threshold # 임계값보다 낮은 경우 -> 왼쪽 가속도
 
@@ -112,6 +112,6 @@ def detect_left_turn(
     neg_start = find_starting_idxs(ay_neg)
 
     if neg_start:
-        return True
+        return 1
 
-    return False
+    return 0

@@ -3,17 +3,18 @@ import pandas as pd
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D 
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import colors as mcolors
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
+from matplotlib.ticker import MultipleLocator
 
 '''
-state_log_df coloumns: 
-        ['time (sec)', 
+state_log_df coloumns:
+        ['time (sec)',
         'Entity',                               * REQUIRED
         'PositionX (m)',                        * REQUIRED
         'PositionY (m)',                        * REQUIRED
@@ -37,8 +38,8 @@ POSITIONS = {'x':'PositionX (m)',
              'y':'PositionY (m)',
              'z':'PositionZ (m)'}
 
-VELOCITY = {'x': 'VelocityX(EntityCoord) (km/h)', 
-            'y': 'VelocityY(EntityCoord) (km/h)', 
+VELOCITY = {'x': 'VelocityX(EntityCoord) (km/h)',
+            'y': 'VelocityY(EntityCoord) (km/h)',
             'z': 'VelocityZ(EntityCoord) (km/h)'}
 
 
@@ -76,7 +77,7 @@ def dataframe_2d_plot(df, col1='time (sec)', col2='speed'):
 
     plt.xlabel(f"{col1}")
     plt.ylabel(f"{col2}")
-    
+
     plt.autoscale(False)
     plt.show()
     plt.close()
@@ -87,14 +88,14 @@ class PLOTING():
     def __init__(self, state_log_df:pd.DataFrame):
 
         self.position_x = POSITIONS['x']
-        self.position_y = POSITIONS['y'] 
-        self.position_z = POSITIONS['z'] 
+        self.position_y = POSITIONS['y']
+        self.position_z = POSITIONS['z']
 
         self.entitiy_data_dict = {
             entity: state_log_df[state_log_df['Entity'] == entity].reset_index(drop=True)
             for entity in pd.unique(state_log_df['Entity'])
         }
-        
+
         print(f"Entities: {self.entitiy_data_dict.keys()}")
         print(pd.unique(state_log_df['Entity']))
 
@@ -127,7 +128,7 @@ class PLOTING():
 
         all_x, all_y, all_z = [], [], []
         for idx, (key, position_data) in enumerate(self.entitiy_data_dict.items()):
-            
+
             print(key)
             # 상대 좌표로 이동
             x = position_data[self.position_x] - self.base_x
@@ -148,7 +149,7 @@ class PLOTING():
                 vel_z = position_data[VELOCITY['z']]
                 velocity = sqrt_square_sum(vel_x,vel_y,vel_z)
 
-                norm = Normalize(vmin=0, vmax=self.max_velocity)  
+                norm = Normalize(vmin=0, vmax=self.max_velocity)
                 self.lc = create_colored_line_segments(x, y, z, velocity, cmap='plasma', norm=norm)
                 self.ax.add_collection3d(self.lc)
 
@@ -175,7 +176,7 @@ class PLOTING():
         self.ax.set_xlim(centers[0] - max_range, centers[0] + max_range)
         self.ax.set_ylim(centers[1] - max_range, centers[1] + max_range)
         self.ax.set_zlim(centers[2] - max_range, centers[2] + max_range)
-        
+
         if show_velocity:
             self.ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), fontsize=9)
             cbar = plt.colorbar(self.lc, ax=self.ax, pad=0.2, shrink=0.7)
@@ -192,7 +193,7 @@ class PLOTING():
 
         if show:
             plt.show()
-        
+
         plt.close(self.fig)
 
     def save_plot(self, fig_name: str | None = None):
@@ -215,7 +216,7 @@ class PLOTING():
 
 def time_base_plot(data:pd.DataFrame,
             save_path:str|None=None, ):
-    
+
     base_axis = 'time (sec)'
     first_axis = 'FrontWheelAngle (deg)'
     second_axis = 'PositionX (m)'
@@ -287,16 +288,19 @@ def draw_ay_plot(df, save_path:None|str|Path = None):
     # plt.axhline(0.3, color='green', linestyle=':', linewidth=1, label='LT threshold (+0.3 rad/s)')
     # plt.axhline(-0.3, color='red', linestyle=':', linewidth=1, label='RT threshold (−0.3 rad/s)')
 
+    # plt.ylim(-1, 1)  # y축 범위 설정
+    # plt.gca().yaxis.set_major_locator(MultipleLocator(0.1))
+
     plt.xlabel('Time (sec)')
     plt.ylabel('Yaw Rate (rad/s)')
     plt.title('Yaw Rate (ay) over Time')
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    
+
     if save_path:
         plt.savefig(save_path)
         plt.close()
-        return 
+        return
 
     plt.show()

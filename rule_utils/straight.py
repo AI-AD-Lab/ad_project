@@ -22,8 +22,8 @@ def detect_straight(
     - duration_sec: 최소 지속 시간 (초 단위)
     """
 
-    df_copy = df.loc[:, ~data.columns.isin(['Entity'])].copy()
-    df_rolling = df_copy.rolling(100).mean().bfill()
+    df_copy = df.loc[:, ~df.columns.isin(['Entity'])].copy()
+    df_rolling = df_copy.rolling(rolling_window).mean().bfill()
     df_rolling['time (sec)'] = df_rolling.index * (1/sampling_hz)
 
     ay = df_rolling[ay_col].values
@@ -44,28 +44,28 @@ def detect_straight(
                 count = 0
 
         return starting_points if starting_points else None
- 
+
     # 1단계 검증 -> ay의 변화가 거의 없는 경우 (직선길)
     ay_straight = abs(ay) < abs_normal_threshold
     if all(ay_straight):
-        return True
+        return 1
 
     # 2단계 검증 -> 일정 임계값 구역에서 일정 시간동안 유지되는 경우 (완만한 곡선)
-    ay_neg = ay < -abs_threshold # 임계값보다 낮은 경우 -> 왼쪽 가속도
-    ay_pos = ay > abs_threshold # 임계값보다 높은 경우 -> 오른쪽 가속도
+    ay_first = ay[0]
+    ay_diff = ay - ay_first
+    ay_diff_straight = abs(ay_diff) < abs_threshold
 
-    # 이벤트 인덱스 탐지
+    if all(ay_diff_straight):
+        return 1
+
+    # 3단계 검증 -> S자 형태 곡선 주행, 한쪽이라도 가속도가 지속적으로 유지되는 경우
+    ay_neg = (ay < -abs_threshold)  # 음의 가속도
+    ay_pos = (ay > abs_threshold)    # 양의 가속도
+
     neg_start = find_starting_idxs(ay_neg)
     pos_start = find_starting_idxs(ay_pos)
 
-    if neg_start or pos_start:
-        return True
+    if neg_start and pos_start:
+        return 1
 
-    # 3단계 검증 -> 속도가 낮을 때 2단계 검출을 위한 경우
-    ay_diff = ay - ay.mean()
-    ay_diff_true = abs(ay_diff) < 0.15
-
-    if all(ay_diff_true):
-        return True
-
-    return False
+    return 0

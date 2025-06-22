@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def is_right_turn(df: pd.DataFrame, 
+def is_right_turn(df: pd.DataFrame,
                   yaw_delta_threshold=-70,
                   angle_diff_threshold=-15,
                   ):
@@ -41,8 +41,8 @@ def is_right_turn(df: pd.DataFrame,
 
     # 5. 판단 조건: 오른쪽으로 일정 각도 이상 회전 && yaw도 증가
     if angle_diff < angle_diff_threshold and yaw_change < yaw_delta_threshold:
-        return True
-    return False
+        return 1
+    return 0
 
 def detect_right_turn(
     df,
@@ -64,8 +64,8 @@ def detect_right_turn(
     - duration_sec: 최소 지속 시간 (초 단위)
     """
 
-    df_copy = df.loc[:, ~data.columns.isin(['Entity'])].copy()
-    df_rolling = df_copy.rolling(100).mean().bfill()
+    df_copy = df.loc[:, ~df.columns.isin(['Entity'])].copy()
+    df_rolling = df_copy.rolling(rolling_window).mean().bfill()
     df_rolling['time (sec)'] = df_rolling.index * (1/sampling_hz)
 
     ay = df_rolling[ay_col].values
@@ -86,7 +86,7 @@ def detect_right_turn(
                 count = 0
 
         return starting_points if starting_points else None
- 
+
 
     ay_neg = ay > right_threshold # 임계값보다 큰 경우 -> 오른쪽 가속도
 
@@ -94,6 +94,6 @@ def detect_right_turn(
     neg_start = find_starting_idxs(ay_neg)
 
     if neg_start:
-        return True
+        return 1
 
-    return False
+    return 0

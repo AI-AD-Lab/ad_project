@@ -7,7 +7,7 @@ def detect_u_turn(
     ay_col='AccelerationY(EntityCoord) (m/s2)',
     sampling_hz=50,
     rolling_window = 100,
-    abs_threshold=-3.0, # 0.3? 0.6?
+    threshold=2.0,
     duration_sec=3
 ):
     """
@@ -22,8 +22,8 @@ def detect_u_turn(
     - duration_sec: 최소 지속 시간 (초 단위)
     """
 
-    df_copy = df.loc[:, ~data.columns.isin(['Entity'])].copy()
-    df_rolling = df_copy.rolling(100).mean().bfill()
+    df_copy = df.loc[:, ~df.columns.isin(['Entity'])].copy()
+    df_rolling = df_copy.rolling(rolling_window).mean().bfill()
     df_rolling['time (sec)'] = df_rolling.index * (1/sampling_hz)
 
     ay = df_rolling[ay_col].values
@@ -44,14 +44,14 @@ def detect_u_turn(
                 count = 0
 
         return starting_points if starting_points else None
- 
 
-    ay_neg = ay < -abs_threshold # 임계값보다 낮은 경우 -> 왼쪽 가속도
+
+    ay_neg = ay < -threshold # 임계값보다 낮은 경우 -> 왼쪽 가속도
 
     # 이벤트 인덱스 탐지
     neg_start = find_starting_idxs(ay_neg)
 
     if neg_start:
-        return True
+        return 1
 
-    return False
+    return 0

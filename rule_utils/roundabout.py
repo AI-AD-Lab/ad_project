@@ -22,14 +22,14 @@ def detect_roundabout(
     - duration_sec: 최소 지속 시간 (초 단위)
     """
 
-    df_copy = df.loc[:, ~data.columns.isin(['Entity'])].copy()
-    df_rolling = df_copy.rolling(100).mean().bfill()
+    df_copy = df.loc[:, ~df.columns.isin(['Entity'])].copy()
+    df_rolling = df_copy.rolling(rolling_window).mean().bfill()
     df_rolling['time (sec)'] = df_rolling.index * (1/sampling_hz)
 
     ay = df_rolling[ay_col].values
     min_frames = int(duration_sec * sampling_hz)
 
-    def find_starting_idxs(condition_array, right=False):
+    def find_starting_idxs(condition_array):
         # condition array is consist of True or False
         starting_points = []
         count = 0
@@ -57,6 +57,6 @@ def detect_roundabout(
     if neg_start and pos_start: # 왼쪽 회전 및 오른쪽 회전이 존재함
         if len(pos_start) >= 2: # 오른쪽 회전이 2번 탐지
             if min(pos_start) < min(neg_start) and max(pos_start) > min(neg_start):
-                return True  # roundabout
-            
-    return False
+                return 1  # roundabout
+
+    return 0

@@ -1,79 +1,46 @@
+from pathlib import Path
 
 config = {
+
+    "Short_to_Long_Label" : {
+        'ST':'straight',
+        'RT':'right_turn',
+        'LT':'left_turn',
+        'UT':'U_turn',
+        'LLC':'left_lane_change',
+        'RLC':'right_lane_change',
+        'RA':'roundabout'
+    },
+
     "class_to_label":{
-        1: "Straight",
-        2: "Left",
-        3: "Right",
-        4: "U-turn",
-        5: "Roundabout",
-        6: "Lane Change - Left",
-        7: "Lane Change - Right",
-        8: "Merge - Left",
-        9: "Merge - Right",
-        10: "Throwing"
+        1: "straight",
+        2: "right_turn",
+        3: "left_turn",
+        4: "U_turn",
+        5: "left_lane_change",
+        6: "right_lane_change",
+        7: "roundabout",
         },
 
     'label_to_class' :{
-        'Straight': 1,
-        'Left': 2,
-        'Right': 3,
-        'U-turn': 4,
-        'Roundabout': 5,
-        'Lane Change - Left': 6,
-        'Lane Change - Right': 7,
-        'Merge - Left': 8,
-        'Merge - Right': 9,
-        'Throwing': 10
+        'straight': 1,
+        'right_turn': 2,
+        'left_turn': 3,
+        'U_turn': 4,
+        'left_lane_change': 5,
+        'right_lane_change': 6,
+        'roundabout': 7
     },
 
     'data_columns':[
-        'time (sec)', 'PositionX (m)', 
+        'time (sec)', 'PositionX (m)',
         'PositionY (m)','PositionZ (m)', 'VelocityX(EntityCoord) (km/h)',
         'VelocityY(EntityCoord) (km/h)', 'VelocityZ(EntityCoord) (km/h)',
         'AccelerationX(EntityCoord) (m/s2)',
         'AccelerationY(EntityCoord) (m/s2)',
-        'AccelerationZ(EntityCoord) (m/s2)', 
+        'AccelerationZ(EntityCoord) (m/s2)',
         'RotationZ (deg)', 'FrontWheelAngle (deg)'],
+
+    "SAMPLING_RATE": 50,  # Hz 1/0.02
+    # "MORAISIM_PATH": Path(__file__).resolve().parent.parent,
 }
-
-
-
-
-config = {
-    "class_to_label":{
-        1: "Straight",
-        2: "Left",
-        3: "Right",
-        4: "U-turn",
-        5: "Roundabout",
-        6: "Lane Change - Left",
-        7: "Lane Change - Right",
-        8: "Merge - Left",
-        9: "Merge - Right",
-        10: "Throwing"
-        },
-
-    'label_to_class' :{
-        'Straight': 1,
-        'Left': 2,
-        'Right': 3,
-        'U-turn': 4,
-        'Roundabout': 5,
-        'Lane Change - Left': 6,
-        'Lane Change - Right': 7,
-        'Merge - Left': 8,
-        'Merge - Right': 9,
-        'Throwing': 10
-    },
-
-    'data_columns':[
-        'time (sec)', 'PositionX (m)', 
-        'PositionY (m)','PositionZ (m)', 'VelocityX(EntityCoord) (km/h)',
-        'VelocityY(EntityCoord) (km/h)', 'VelocityZ(EntityCoord) (km/h)',
-        'AccelerationX(EntityCoord) (m/s2)',
-        'AccelerationY(EntityCoord) (m/s2)',
-        'AccelerationZ(EntityCoord) (m/s2)', 
-        'RotationZ (deg)', 'FrontWheelAngle (deg)'],
-}
-
-
