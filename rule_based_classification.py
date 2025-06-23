@@ -40,7 +40,7 @@ def data_load(data_file_path):
 
 # 기본 경로 설정
 MORAISIM_PATH = Path(__file__).resolve().parent.parent
-SINGLE_SCENARIO_SYNLOG_DATA_ROOT = MORAISIM_PATH /  'simulation_TOTAL'  # 시간이 일정한 데이터 파일: SYNC
+SINGLE_SCENARIO_SYNLOG_DATA_ROOT = MORAISIM_PATH /  'simulation_LLC_NEW2'  # 시간이 일정한 데이터 파일: SYNC
 # SINGLE_SCENARIO_SYNLOG_DATA_ROOT = MORAISIM_PATH /  'simulation_TOTAL'  # 시간이 일정한 데이터 파일: SYNC
 
 
@@ -67,17 +67,17 @@ for file, label in zip(label_data['file_name'], label_data['trajectory type']):
     NO_LABEL = 0
     counting = 1
 
-    LLC = detect_left_lane_change(data, duration_sec=0.8, threshold=0.25)
+    LLC = detect_left_lane_change(data, duration_sec=0.7, threshold=0.2)
     RLC = detect_right_lane_change(data)
-    ST = detect_straight(data)
+    ST = detect_straight(data, abs_normal_threshold=0.05, abs_threshold=0.3, duration_sec=8)
     RT = detect_right_turn(data)
     LT = detect_left_turn(data)
     RA = detect_roundabout(data)
     UT = detect_u_turn(data)
 
     # UT -> LT -> RT -> LLC -> RLC -> RA -> ST // priority sequence
-    labels = ['UT','RA', 'LT', 'RT', 'LLC', 'RLC',  'ST']
-    values = [UT, RA, LT, RT, LLC, RLC, ST]
+    labels = ['ST', 'UT','RA', 'LT', 'RT', 'LLC', 'RLC']
+    values = [ ST, UT, RA, LT, RT, LLC, RLC]
 
     for i, value in enumerate(values) :
         if value:
@@ -94,40 +94,41 @@ for file, label in zip(label_data['file_name'], label_data['trajectory type']):
 
     result_list[-1] = counting
 
-    # result_list = [ST, RT, LT, UT, LLC, RLC, RA, NO_LABEL, counting]
+    result_list = [ST, RT, LT, UT, LLC, RLC, RA, NO_LABEL, counting]
     labeled_data[label_cls[label]-1].append(result_list)
     # print(f'label: {label_cls[label]}, result: {result_list}')
 
-    # df_copy = data.loc[:, ~data.columns.isin(['Entity'])].copy()
-    # df_rolling = df_copy.rolling(100).mean().bfill()
-    # df_rolling['time (sec)'] = df_rolling.index * 0.02 # index * 0.02
 
-    # if './output/plots/RLC/' not in str(file):
-    #     os.makedirs('./output/plots/RLC/', exist_ok=True)
-    # time_base_plot(df_rolling, save_path= f'./output/plots/RLC/{file}_time_base_plot.png')
-    # draw_ay_plot(df_rolling, save_path= f'./output/plots/RLC/{file}_ay_plot.png')
+    df_copy = data.loc[:, ~data.columns.isin(['Entity'])].copy()
+    df_rolling = df_copy.rolling(100).mean().bfill()
+    df_rolling['time (sec)'] = df_rolling.index * 0.02 # index * 0.02
 
-    # vel_x = df_rolling['VelocityX(EntityCoord) (km/h)'].values
-    # vel_y = df_rolling['VelocityY(EntityCoord) (km/h)'].values
-    # vel_z = df_rolling['VelocityZ(EntityCoord) (km/h)'].values
-    # total_vel = np.sqrt(vel_x**2 + vel_y**2 + vel_z**2)
-    # print(f'Velocity: {total_vel.mean():.2f} km/h')
+    if './output/plots/LLC_NEW2/' not in str(file):
+        os.makedirs('./output/plots/LLC_NEW2/', exist_ok=True)
+    time_base_plot(df_rolling, save_path= f'./output/plots/LLC_NEW2/{file}_time_base_plot.png')
+    draw_ay_plot(df_rolling, save_path= f'./output/plots/LLC_NEW2/{file}_ay_plot.png')
+
+    vel_x = df_rolling['VelocityX(EntityCoord) (km/h)'].values
+    vel_y = df_rolling['VelocityY(EntityCoord) (km/h)'].values
+    vel_z = df_rolling['VelocityZ(EntityCoord) (km/h)'].values
+    total_vel = np.sqrt(vel_x**2 + vel_y**2 + vel_z**2)
+    print(f'Velocity: {total_vel.mean():.2f} km/h')
 
 
     count += 1
     if count % 100 == 0:
         print(f'Processed {count} files...')
 #%%
-# total_result = []
-# for i, label in enumerate(labeled_data):
-#     np_sliced = np.array(label)
-#     np_sliced_change = [[0 if x is None else x for x in row] for row in np_sliced]
-#     column_sum = np.sum(np_sliced_change, axis=0)
-#     total_result.append(column_sum)
+total_result = []
+for i, label in enumerate(labeled_data):
+    np_sliced = np.array(label)
+    np_sliced_change = [[0 if x is None else x for x in row] for row in np_sliced]
+    column_sum = np.sum(np_sliced_change, axis=0)
+    total_result.append(column_sum)
 
-# print(['ST', 'RT', 'LT', 'UT', 'LLC', 'RLC', 'RA', "NO_LABEL", "TOTAL"])
-# df_data = pd.DataFrame(total_result)
-# print(df_data)
+print(['ST', 'RT', 'LT', 'UT', 'LLC', 'RLC', 'RA', "NO_LABEL", "TOTAL"])
+df_data = pd.DataFrame(total_result)
+print(df_data)
 #%%
 total_result = []
 for i, label in enumerate(labeled_data):
