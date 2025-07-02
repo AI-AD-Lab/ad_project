@@ -92,9 +92,9 @@ def detect_lane_change_by_ay_direction(
     if (neg_start is None) or (pos_start is None):
         return 'None'
 
-    if neg_start < pos_start:
+    if min(neg_start) < min(pos_start):
         return "RLC"
-    elif pos_start < neg_start:
+    elif min(pos_start) < min(neg_start):
         return "LLC"
 
 def detect_left_lane_change(
@@ -127,7 +127,7 @@ def detect_left_lane_change(
             else:
                 count = 0
 
-        return starting_points if starting_points else None
+        return starting_points if starting_points else -1
 
     # 조건 배열
     ay_neg = (ay < -threshold) #& (ay > -1.0)
@@ -137,8 +137,17 @@ def detect_left_lane_change(
     neg_start = find_starting_idxs(ay_neg)
     pos_start = find_starting_idxs(ay_pos)
 
-    if (neg_start is None) or (pos_start is None):
-        return 0
+    if (neg_start == -1) or (pos_start == -1):
+        threshold /= 2
+        min_frames *= 1.2
+        ay_neg = (ay < -threshold)
+        ay_pos = (ay > threshold) #& (ay < 1.0)
+
+        neg_start = find_starting_idxs(ay_neg)
+        pos_start = find_starting_idxs(ay_pos)
+
+        if (neg_start == -1) or (pos_start == -1):
+            return 0
 
     if min(neg_start) < min(pos_start):
         return 1
@@ -159,40 +168,48 @@ def detect_right_lane_change(
     df_rolling = df_copy.rolling(rolling_window).mean().bfill()
     df_rolling['time (sec)'] = df_rolling.index * (1/sampling_hz) # index * 0.02
 
-    ay = df[ay_col].values
+    ay = df_rolling[ay_col].values
     min_frames = int(duration_sec * sampling_hz)
 
-    def find_first_event(condition_array):
+    def find_starting_idxs(condition_array):
+        # condition array is consist of True or False
+        starting_points = []
         count = 0
-        serial = 0
-        idx = -1
         for i, cond in enumerate(condition_array):
             if cond:
                 count += 1
-                if count >= min_frames and count > serial:
-                    serial = count
+                if count >= min_frames:
                     idx = i - count + 1
+                    if idx not in starting_points:
+                        starting_points.append(idx)
             else:
                 count = 0
 
-        if serial != 0:
-            return idx
-        return -1
+        return starting_points if starting_points else -1
 
     # 조건 배열
     ay_neg = (ay < -threshold)
     ay_pos = (ay > threshold) #& (ay < 1.0)
 
     # 최초 이벤트 인덱스 탐지
-    neg_start = find_first_event(ay_neg)
-    pos_start = find_first_event(ay_pos)
+    neg_start = find_starting_idxs(ay_neg)
+    pos_start = find_starting_idxs(ay_pos)
 
     if (neg_start == -1) or (pos_start == -1):
-        return 0
+        threshold /= 2
+        min_frames *= 1.2
+        ay_neg = (ay < -threshold)
+        ay_pos = (ay > threshold) #& (ay < 1.0)
 
-    if neg_start < pos_start:
+        neg_start = find_starting_idxs(ay_neg)
+        pos_start = find_starting_idxs(ay_pos)
+
+        if (neg_start == -1) or (pos_start == -1):
+            return 0
+
+    if min(neg_start) < min(pos_start):
         return 0
-    elif pos_start < neg_start:
+    elif min(pos_start) < min(neg_start):
         return 1
     else:
         return 0

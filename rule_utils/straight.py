@@ -46,14 +46,14 @@ def detect_straight(
         return starting_points if starting_points else None
 
     # 1단계 검증 -> ay의 변화가 거의 없는 경우 (직선길)
-    ay_straight = abs(ay) < abs_normal_threshold
+    ay_straight = abs(ay) <= abs_normal_threshold
     if all(ay_straight):
         return 1
 
     # 2단계 검증 -> 일정 임계값 구역에서 일정 시간동안 유지되는 경우 (완만한 곡선)
     ay_first = ay[0]
     ay_diff = ay - ay_first
-    ay_diff_straight = abs(ay_diff) < abs_threshold
+    ay_diff_straight = abs(ay_diff) <= abs_normal_threshold*2
 
     if all(ay_diff_straight):
         return 1
@@ -65,7 +65,7 @@ def detect_straight(
     neg_start = find_starting_idxs(ay_neg)
     pos_start = find_starting_idxs(ay_pos)
 
-    if neg_start and pos_start:
+    if neg_start or pos_start:
         return 1
 
     return 0

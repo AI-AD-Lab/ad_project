@@ -62,7 +62,7 @@ def get_trajectory_type(file_name):
             return trajectory_type[key]
     return None
 
-sample_scenario_log_root_dir_path = Path(r'../simulation_LLC_NEW2/')
+sample_scenario_log_root_dir_path = Path(r'../simulation_LC/')
 items_in_root_dir = os.listdir(sample_scenario_log_root_dir_path)
 # print(f"items_in_root_dir: {items_in_root_dir[:5]}")
 
