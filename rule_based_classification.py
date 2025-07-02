@@ -59,8 +59,6 @@ def pandas_plot_save(df, save_path:None|str=None):
 # 기본 경로 설정
 MORAISIM_PATH = Path(__file__).resolve().parent.parent
 SINGLE_SCENARIO_SYNLOG_DATA_ROOT = MORAISIM_PATH /  'simulation_TOTAL_250626'  # 시간이 일정한 데이터 파일: SYNC
-# SINGLE_SCENARIO_SYNLOG_DATA_ROOT = MORAISIM_PATH /  'simulation_TOTAL'  # 시간이 일정한 데이터 파일: SYNC
-
 
 cls_label = config['class_to_label']
 label_cls = config['label_to_class']
@@ -75,8 +73,13 @@ count = 0
 labels = ['RA','ST', 'UT', 'LT', 'RT', 'LLC', 'RLC']
 perms = list(itertools.permutations(labels))
 
+#%%
 for perm_idx, perm in enumerate(perms):
     labeled_data = [[] for _ in range(len(cls_label))]
+    real_index = { short_to_long_label[label]:idx for idx, label in enumerate(perm)}
+    print(f'perm: {perm}')
+    print(f'real_index: {real_index}')
+
     for file, label in zip(label_data['file_name'], label_data['trajectory type']):
 
         file_path = SINGLE_SCENARIO_SYNLOG_DATA_ROOT / file
@@ -94,6 +97,7 @@ for perm_idx, perm in enumerate(perms):
         RA = detect_roundabout(data)
         UT = detect_u_turn(data)
 
+
         label_variable = {
             'RA': RA,
             'ST': ST,
@@ -108,15 +112,17 @@ for perm_idx, perm in enumerate(perms):
 
 
         # labels = ['RA','ST', 'UT', 'LT', 'RT', 'LLC', 'RLC']
-        values = [ label_variable[label] for label in perm ]
+        values = [ label_variable[label] for label in perm ] # 우선순위에 맞게 정렬, prediction
+        
+        # values = [ label for label in perm ]
+
         # values = [ RA, ST, UT,  LT, RT, LLC, RLC]
 
+        # 첫 번째만 셀렉
         for i, value in enumerate(values) :
             if value:
                 result_list = [0] * 9
-                short_label = perm[i]
-                label_cls_index = label_cls[short_to_long_label[short_label]] - 1
-                result_list[label_cls_index] = 1
+                result_list[i] = 1
                 break  # 첫 번째 1만 인정
 
         # No label case
@@ -125,14 +131,13 @@ for perm_idx, perm in enumerate(perms):
             result_list[-2] = 1
 
         result_list[-1] = counting
-
-        # result_list = [ST, RT, LT, UT, LLC, RLC, RA, NO_LABEL, counting]
-        labeled_data[label_cls[label]-1].append(result_list)
+        labeled_data[real_index[label]].append(result_list) # real-> prediction 넣기
         # print(f'label: {label_cls[label]}, result: {result_list}')
 
         # count += 1
         # if count % 100 == 0:
         #     print(f'Processed {count} files...')
+    
 
     # total_result = []
     # for i, label in enumerate(labeled_data):
@@ -153,18 +158,23 @@ for perm_idx, perm in enumerate(perms):
         total_result.append(column_sum)
 
     perm_array = list(perm)
-    df_total_result = pd.DataFrame(total_result, columns=perm_array + ["NO_LABEL", "TOTAL"])
-    df_total_result.index = cls_label
+    df_total_result = pd.DataFrame(total_result, columns=perm_array + ["NO_LABEL", "TOTAL"], index=perm_array)
+    # df_total_result.index = cls_label
     # print(df_total_result)
 
-    pandas_save_path = './output/plots/score/'
-    if not os.path.exists(pandas_save_path):
-        os.makedirs(pandas_save_path)
-    pandas_plot_save(df_total_result, save_path=pandas_save_path + f"total_result_{perm_idx}.png")
-    df_total_result.to_csv(pandas_save_path + f"total_result_{perm_idx}.csv", index=False)
+    # pandas_save_path = './output/plots/score/'
+    # if not os.path.exists(pandas_save_path):
+    #     os.makedirs(pandas_save_path)
+    # pandas_plot_save(df_total_result, save_path=pandas_save_path + f"total_result_{perm_idx}.png")
+    # df_total_result.to_csv(pandas_save_path + f"total_result_{perm_idx}.csv", index=False)
+
+    print(df_total_result)
+    break
 
     if perm_idx % 100 == 0:
         print(f'Processed {perm_idx} permutations...')
 
 # %%
+
 # UT -> LT -> RT -> LLC -> RLC -> RA -> ST
+# %%
