@@ -4,13 +4,11 @@ import numpy as np
 from pathlib import Path
 import os
 import matplotlib.pyplot as plt
-from _utils.data_processing_utils import normalize_time
 from _utils.utils_plot import time_base_plot, draw_ay_plot
 from rule_utils.left_turn import *
 from rule_utils.right_turn import *
 from config import config
 import itertools
-from multiprocessing import Pool, cpu_count
 
 from rule_utils.lane_change import detect_right_lane_change, detect_left_lane_change
 from rule_utils.straight import detect_straight
@@ -28,8 +26,9 @@ label_cls = config['label_to_class']
 short_to_long_label = config['Short_to_Long_Label']
 
 label_data = pd.read_csv(SINGLE_SCENARIO_SYNLOG_DATA_ROOT / 'label.csv')
+
+# RA ST UT LT RT LLC RLC
 labels = ['RA','ST', 'UT', 'LT', 'RT', 'LLC', 'RLC']
-perms = list(itertools.permutations(labels))
 
 #%% DATA LOAD
 def data_load(data_file_path):
@@ -54,7 +53,7 @@ def pandas_plot_save(df, save_path:None|str=None):
     plt.close(fig)
 
 #%% MAIN CLASSIFICATION FUNCTION
-def excute_rule_based_classification(class_perm:list[str]) -> pd.DataFrame:
+def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.DataFrame:
     labeled_data = [[] for _ in range(len(cls_label))]
     real_index = { short_to_long_label[label]:idx for idx, label in enumerate(class_perm) }
 
@@ -79,14 +78,10 @@ def excute_rule_based_classification(class_perm:list[str]) -> pd.DataFrame:
         }
 
         values = [label_variable[label] for label in class_perm]
-        for i, value in enumerate(values):
-            if value:
-                result_list = [0] * 9
-                result_list[i] = 1
-                break
-            else:
-                result_list = [0] * 9
-                result_list[-2] = 1  # NO_LABEL
+
+        if not any(values):
+            result_list = [0] * 9
+            result_list[-2] = 1  # NO_LABEL
 
         result_list[-1] = COUNT
         labeled_data[real_index[label]].append(result_list)
@@ -102,27 +97,19 @@ def excute_rule_based_classification(class_perm:list[str]) -> pd.DataFrame:
     df_total_result = pd.DataFrame(total_result, columns=perm_array + ["NO_LABEL", "TOTAL"], index=perm_array)
     return df_total_result
 
-#%% MULTIPROCESSING WRAPPER
-def process_one_perm(args):
-    perm_idx, perm = args
-    df_total_result = excute_rule_based_classification(class_perm=perm)
+def process_one_perm():
+    df_total_result = excute_rule_based_classification_no_priority(class_perm=labels)
 
     save_dir = Path('./output/plots/score')
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    plot_path = save_dir / f"total_result_{perm_idx}.png"
-    csv_path = save_dir / f"total_result_{perm_idx}.csv"
+    plot_path = save_dir / f"no_priority.png"
+    csv_path = save_dir / f"no_priority.csv"
 
     pandas_plot_save(df_total_result, save_path=str(plot_path))
     df_total_result.to_csv(csv_path, index=False)
 
-    if perm_idx % 100 == 0:
-        print(f"[INFO] Processed {perm_idx} permutations.")
 
 #%% MAIN RUN
 if __name__ == "__main__":
-    num_workers = min(cpu_count(), 12)  # 예: 최대 12개까지 사용
-    print(f"Starting multiprocessing with {num_workers} workers...")
-
-    with Pool(num_workers) as pool:
-        pool.map(process_one_perm, list(enumerate(perms)))
+    process_one_perm()

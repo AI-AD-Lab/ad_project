@@ -292,8 +292,8 @@ def draw_ay_plot(df, save_path:None|str|Path = None):
     # plt.gca().yaxis.set_major_locator(MultipleLocator(0.1))
 
     plt.xlabel('Time (sec)')
-    plt.ylabel('Yaw Rate (rad/s)')
-    plt.title('Yaw Rate (ay) over Time')
+    plt.ylabel('Acceleration Y')
+    plt.title('Acceleration Y over Time')
     plt.legend()
     plt.grid(True)
     plt.tight_layout()

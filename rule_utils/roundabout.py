@@ -8,7 +8,8 @@ def detect_roundabout(
     rolling_window = 100,
     threshold_neg=-0.3,
     threshold_pos=+0.3,
-    duration_sec=1.3
+    duration_sec=1.3,
+    max_duration_sec=5
 ):
     """
     ay만을 기반으로 좌우 차선 변경 판단 (지속적 ay 변화 기반)
@@ -28,20 +29,27 @@ def detect_roundabout(
 
     ay = df_rolling[ay_col].values
     min_frames = int(duration_sec * sampling_hz)
+    max_frames = int(max_duration_sec * sampling_hz)
 
     def find_starting_idxs(condition_array):
-        # condition array is consist of True or False
         starting_points = []
         count = 0
+        current_start = None
+
         for i, cond in enumerate(condition_array):
             if cond:
                 count += 1
-                if count >= min_frames:
-                    idx = i - count + 1
-                    if idx not in starting_points:
-                        starting_points.append(idx)
+                if count == min_frames:
+                    current_start = i - count + 1
+                    starting_points.append(current_start)
+                elif count > max_frames:
+                    # max_frames 초과 → 마지막에 넣은 시작점 제거
+                    if current_start in starting_points:
+                        starting_points.remove(current_start)
+                    current_start = None
             else:
                 count = 0
+                current_start = None
 
         return starting_points if starting_points else None
 
@@ -52,7 +60,6 @@ def detect_roundabout(
     # 최초 이벤트 인덱스 탐지
     neg_start = find_starting_idxs(ay_neg)
     pos_start = find_starting_idxs(ay_pos)
-
 
     if neg_start and pos_start: # 왼쪽 회전 및 오른쪽 회전이 존재함
         if len(pos_start) >= 2: # 오른쪽 회전이 2번 탐지
