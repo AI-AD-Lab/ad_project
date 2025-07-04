@@ -69,7 +69,8 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
         ST = detect_straight(data, abs_normal_threshold=0.05, abs_threshold=0.3, duration_sec=8)
         RT = detect_right_turn(data)
         LT = detect_left_turn(data)
-        RA = detect_roundabout(data)
+        RA = detect_roundabout(data, max_duration_sec=13)
+        
         UT = detect_u_turn(data)
 
         label_variable = {
@@ -91,7 +92,6 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
         labeled_data[real_index[label]].append(result_list)
 
         if label=='straight' and RA==1:
-            print("HERE")
             id = 'straight_RA'
             save_dir = Path(f'./output/plots/{id}/')
             save_dir.mkdir(parents=True, exist_ok=True)
@@ -109,12 +109,11 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
     perm_array = list(class_perm)
     df_total_result = pd.DataFrame(total_result, columns=perm_array + ["NO_LABEL", "TOTAL"], index=perm_array)
 
-
     return df_total_result
 
-def process_one_perm():
-    df_total_result = excute_rule_based_classification_no_priority(class_perm=labels)
-
+# def process_one_perm():
+#     df_total_result = excute_rule_based_classification_no_priority(class_perm=labels)
+#     print(df_total_result)
     # save_dir = Path('./output/plots/score')
     # save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -127,6 +126,9 @@ def process_one_perm():
 
 #%% MAIN RUN
 if __name__ == "__main__":
-    excute_rule_based_classification_no_priority(class_perm=labels)
+    
+    dd =  excute_rule_based_classification_no_priority(class_perm=labels)
+    print(dd)
 
 
+# %%

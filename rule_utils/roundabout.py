@@ -9,7 +9,7 @@ def detect_roundabout(
     threshold_neg=-0.3,
     threshold_pos=+0.3,
     duration_sec=1.3,
-    max_duration_sec=5
+    max_duration_sec=8
 ):
     """
     ay만을 기반으로 좌우 차선 변경 판단 (지속적 ay 변화 기반)
@@ -31,7 +31,23 @@ def detect_roundabout(
     min_frames = int(duration_sec * sampling_hz)
     max_frames = int(max_duration_sec * sampling_hz)
 
-    def find_starting_idxs(condition_array):
+    # def find_starting_idxs(condition_array):
+    #     # condition array is consist of True or False
+    #     starting_points = []
+    #     count = 0
+    #     for i, cond in enumerate(condition_array):
+    #         if cond:
+    #             count += 1
+    #             if count >= min_frames:
+    #                 idx = i - count + 1
+    #                 if idx not in starting_points:
+    #                     starting_points.append(idx)
+    #         else:
+    #             count = 0
+
+    #     return starting_points if starting_points else None
+
+    def find_starting_idxs(condition_array):  # NOT SO GOOD PERFORMANCE
         starting_points = []
         count = 0
         current_start = None
