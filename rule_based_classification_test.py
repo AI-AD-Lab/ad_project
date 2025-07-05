@@ -4,11 +4,11 @@ import numpy as np
 from pathlib import Path
 import os
 import matplotlib.pyplot as plt
-from _utils.utils_plot import time_base_plot, draw_ay_plot
 from rule_utils.left_turn import *
 from rule_utils.right_turn import *
 from config import config
 import itertools
+from _utils.utils_plot import time_base_plot, draw_acceleration_y_plot
 
 from rule_utils.lane_change import detect_right_lane_change, detect_left_lane_change
 from rule_utils.straight import detect_straight
@@ -69,8 +69,8 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
         ST = detect_straight(data, abs_normal_threshold=0.05, abs_threshold=0.3, duration_sec=8)
         RT = detect_right_turn(data)
         LT = detect_left_turn(data)
-        RA = detect_roundabout(data, max_duration_sec=13)
-        
+        RA = detect_roundabout(data, max_duration_sec=15)
+
         UT = detect_u_turn(data)
 
         label_variable = {
@@ -91,13 +91,49 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
         result_list[-1] = COUNT
         labeled_data[real_index[label]].append(result_list)
 
+        outstanding_label_save_dir = Path(f'./output/plots/mis-classified/')
         if label=='straight' and RA==1:
             id = 'straight_RA'
-            save_dir = Path(f'./output/plots/{id}/')
+            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
             save_dir.mkdir(parents=True, exist_ok=True)
 
             plot_path = save_dir / f"{file}.png"
-            draw_ay_plot(data, plot_path)
+            draw_acceleration_y_plot(data, plot_path)
+
+        if label=='roundabout' and RLC==1 and RA!=1:
+            id = 'roundabout_RLC'
+            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
+            save_dir.mkdir(parents=True, exist_ok=True)
+
+            plot_path = save_dir / f"{file}.png"
+            draw_acceleration_y_plot(data, plot_path)
+
+
+        if label=='straight' and result_list[-2] == 1:
+            id = 'straight_NO_LABEL'
+            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
+            save_dir.mkdir(parents=True, exist_ok=True)
+
+            plot_path = save_dir / f"{file}.png"
+            draw_acceleration_y_plot(data, plot_path)
+
+
+        if label=='right_turn' and ST == 1:
+            id = 'right_turn_ST'
+            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
+            save_dir.mkdir(parents=True, exist_ok=True)
+
+            plot_path = save_dir / f"{file}.png"
+            draw_acceleration_y_plot(data, plot_path)
+
+
+        if label=='left_lane_change' and ST == 1:
+            id = 'left_lane_change_ST'
+            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
+            save_dir.mkdir(parents=True, exist_ok=True)
+
+            plot_path = save_dir / f"{file}.png"
+            draw_acceleration_y_plot(data, plot_path)
 
     total_result = []
     for i, label in enumerate(labeled_data):
@@ -126,7 +162,7 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
 
 #%% MAIN RUN
 if __name__ == "__main__":
-    
+
     dd =  excute_rule_based_classification_no_priority(class_perm=labels)
     print(dd)
 

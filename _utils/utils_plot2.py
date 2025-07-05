@@ -62,7 +62,7 @@ def create_colored_line_segments(x, y, z, velocity, cmap='plasma', norm=None):
     return lc
 
 def plot_driving_trajectory(state_log_dataframe:pd.DataFrame,
-                            entity:str="Ego", 
+                            entity:str="Ego",
                             visulaize_velocity:bool=False,
                             color_map:str='viridis',
                             save_path:None|str|Path=None,

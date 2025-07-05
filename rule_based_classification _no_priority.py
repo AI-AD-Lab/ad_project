@@ -4,11 +4,9 @@ import numpy as np
 from pathlib import Path
 import os
 import matplotlib.pyplot as plt
-from _utils.utils_plot import time_base_plot, draw_ay_plot
 from rule_utils.left_turn import *
 from rule_utils.right_turn import *
 from config import config
-import itertools
 
 from rule_utils.lane_change import detect_right_lane_change, detect_left_lane_change
 from rule_utils.straight import detect_straight
@@ -69,7 +67,7 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
         ST = detect_straight(data, abs_normal_threshold=0.05, abs_threshold=0.3, duration_sec=8)
         RT = detect_right_turn(data)
         LT = detect_left_turn(data)
-        RA = detect_roundabout(data)
+        RA = detect_roundabout(data, max_duration_sec=15)
         UT = detect_u_turn(data)
 
         label_variable = {
@@ -79,8 +77,12 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
 
         values = [label_variable[label] for label in class_perm]
 
+        result_list = [0] * 9
+        for i, value in enumerate(values):
+            if value:
+                result_list[i] = value
+
         if not any(values):
-            result_list = [0] * 9
             result_list[-2] = 1  # NO_LABEL
 
         result_list[-1] = COUNT

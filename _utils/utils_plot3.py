@@ -29,16 +29,14 @@ def sqrt_square_sum( x, y, z):
     return np.sqrt(x**2 + y**2 + z**2)
 
 def plot_driving_trajectory(state_log_dataframe:pd.DataFrame,
-                            entity:str="Ego", 
-                            visulaize_velocity:bool=False,
+                            entity:str="Ego",
+                            visualize_velocity:bool=False,
                             color_map:str='viridis',
                             save_path:None|str|Path=None,
-                            elev=30, azim=-110,
                             ):
 
     position_x = POSITIONS['x']
     position_y = POSITIONS['y']
-    position_z = POSITIONS['z']
 
     entity_state_log_data = state_log_dataframe[state_log_dataframe['Entity'] == entity]
     base_x = entity_state_log_data[position_x].iloc[0]
@@ -50,15 +48,19 @@ def plot_driving_trajectory(state_log_dataframe:pd.DataFrame,
 
     fig_trajectory = plt.figure(figsize=(6, 6), dpi=300)
     ax_trajectory = fig_trajectory.add_subplot(111)
-    ax_trajectory.set_xlabel(f"{position_x.split()[0]}")
-    ax_trajectory.set_ylabel(f"{position_y.split()[0]}")
+    ax_trajectory.set_xlabel(f"Position X (m)", fontsize=14, fontweight='bold')
+    ax_trajectory.set_ylabel(f"Position Y (m)", fontsize=14, fontweight='bold')
+
 
     x = entity_state_log_data[position_x] - base_x
     y = entity_state_log_data[position_y] - base_y
 
 
-    ax_trajectory.scatter(x.iloc[0], y.iloc[0], color=red, marker='o', s=50, label=f"start point")
-    ax_trajectory.scatter(x.iloc[-1], y.iloc[-1], color=blue, marker='x', s=50, label=f"end point")
+    ax_trajectory.scatter(x.iloc[0], y.iloc[0], color=red, marker='o', s=90, label=f"start point")
+    ax_trajectory.scatter(x.iloc[-1], y.iloc[-1], color=blue, marker='x',
+                          s=100, label=f"end point")
+    # ax_trajectory.legend(fontsize=12, loc='best')
+
 
     min_vals = np.array([x,y]).min(axis=1)
     max_vals = np.array([x,y]).max(axis=1)
@@ -69,7 +71,7 @@ def plot_driving_trajectory(state_log_dataframe:pd.DataFrame,
     ax_trajectory.set_xlim(centers[0] - max_range - free_space, centers[0] + max_range + free_space)
     ax_trajectory.set_ylim(centers[1] - max_range - free_space, centers[1] + max_range + free_space)
 
-    if visulaize_velocity:
+    if visualize_velocity:
         velocity_x = entity_state_log_data[VELOCITY['x']]
         velocity_y = entity_state_log_data[VELOCITY['y']]
         velocity_z = entity_state_log_data[VELOCITY['z']]
@@ -86,12 +88,23 @@ def plot_driving_trajectory(state_log_dataframe:pd.DataFrame,
         lc.set_linewidth(5)
         ax_trajectory.add_collection(lc)
 
+        handles, labels = ax_trajectory.get_legend_handles_labels()
+
         # 🎯 메인 그래프 저장 (trajectory만)
         if save_path:
             fig_trajectory.savefig(save_path, dpi=300, bbox_inches='tight')
             plt.close(fig_trajectory)
         else:
             plt.show()
+
+
+        fig_legend, ax_legend = plt.subplots(figsize=(2.5, 1.0))  # 사이즈 조정 가능
+        ax_legend.axis('off')  # 축 제거
+        legend = ax_legend.legend(handles, labels, loc='center', fontsize=10, frameon=False)
+
+        legend_savepath = save_path.replace('.png', '_legend.png')
+        fig_legend.savefig(legend_savepath, dpi=300, bbox_inches='tight', transparent=True)
+        plt.close(fig_legend)
 
         # 🎯 Colorbar만 별도 저장
         fig_colorbar, ax_colorbar = plt.subplots(figsize=(1.0, 4.0))
@@ -101,7 +114,7 @@ def plot_driving_trajectory(state_log_dataframe:pd.DataFrame,
         sm.set_array([])  # 빈 배열로 설정 (값은 norm에서 처리됨)
 
         cbar = fig_colorbar.colorbar(sm, cax=ax_colorbar)
-        cbar.set_label("Velocity (m/s)")
+        cbar.set_label("Velocity (km/h)")
         # cbar.ax.text(1.1, 1.02, f"Max: {max_velocity:.2f}",
         #             transform=cbar.ax.transAxes,
         #             ha='center', va='bottom', fontsize=10, color='black')
@@ -125,11 +138,11 @@ if __name__=='__main__':
     statelog_csv = [statelog for statelog in os.listdir(example_dir_path) if statelog.endswith('statelog.csv')]
 
     for statelog in statelog_csv:
-        
+
         example_file_path = example_dir_path + statelog
         example_df = pd.read_csv(example_file_path)
 
         name_change = statelog.replace('statelog.csv', 'plpt.png')
 
         saving_path = example_dir_path + name_change
-        plot_driving_trajectory(example_df, save_path=saving_path , visulaize_velocity=True)
+        plot_driving_trajectory(example_df, save_path=saving_path , visualize_velocity=True)

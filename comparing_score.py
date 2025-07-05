@@ -7,13 +7,19 @@ import os
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 import shutil
 
-parent_dir_path = Path(__file__).resolve().parent.parent
-result_path = parent_dir_path / 'score_250703'
-best_score_path = parent_dir_path / 'best_score'
+# parent_dir_path = Path(__file__).resolve().parent.parent
+# result_path = parent_dir_path / 'score_250703_RA_No_MAX_duration'
+# best_score_path = parent_dir_path / 'best_score_no_max_duration'
+
+base_path = Path('./output/plots')
+result_path = base_path / 'score'
+best_score_path = base_path / 'best_score_max_duration'
+if not best_score_path.exists():
+    best_score_path.mkdir(parents=True, exist_ok=True)
 
 total_files = os.listdir(result_path)
 score_csv_files = [score_file for score_file in total_files if score_file.endswith('.csv')]
-# %% 
+# %%
 
 def compute_score(conf_matrix: pd.DataFrame):
     """
@@ -73,7 +79,7 @@ print( best_f1_score, file_name)
 best_files = []
 best_sccore_cls_priority = []
 for _f1, _file in np_sort:
-    
+
     if float(_f1) < best_f1_score:
         break
     print(_file)
@@ -81,12 +87,12 @@ for _f1, _file in np_sort:
     file_path = result_path / _file.replace('.csv', '.png')
     move_to = best_score_path / _file.replace('.csv', '.png')
     shutil.copy(file_path, move_to)
-    
+
     data_file_path = result_path / _file
     data = pd.read_csv(data_file_path)
 
-    best_sccore_cls_priority.append(data.columns) 
-    
+    best_sccore_cls_priority.append(data.columns)
+
 
 for_csv_data = pd.DataFrame(best_sccore_cls_priority)
 for_csv_data.to_csv(best_score_path/'priority.csv')
@@ -102,8 +108,8 @@ for file in best_files:
     recall = score['recall']
     f1 = score['f1']
 
-    print('-'*30)
-    print(f"file name: {file}")
-    print(f"precision:{precision}, recall:{recall}, f1-score:{f1}")
+    # print('-'*30)
+    # print(f"file name: {file}")
+    # print(f"precision:{precision}, recall:{recall}, f1-score:{f1}")
 
 # %%

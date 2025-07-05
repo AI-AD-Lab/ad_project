@@ -6,3 +6,4 @@ tqdm==4.67.1
 torch
 torchaudio
 torchvision
+scikit-learn==1.4.2

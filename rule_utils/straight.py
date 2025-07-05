@@ -8,7 +8,7 @@ def detect_straight(
     rolling_window = 100,
     abs_normal_threshold=0.05,
     abs_threshold=0.3, # 0.3? 0.6?
-    duration_sec=6
+    duration_sec=8
 ):
     """
     ay만을 기반으로 좌우 차선 변경 판단 (지속적 ay 변화 기반)
