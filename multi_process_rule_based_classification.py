@@ -103,7 +103,7 @@ def process_one_perm(args):
     perm_idx, perm = args
     df_total_result = excute_rule_based_classification(class_perm=perm)
 
-    save_dir = Path('./output/plots/score')
+    save_dir = Path('../FOR_REVISION/score_data')
     save_dir.mkdir(parents=True, exist_ok=True)
 
     plot_path = save_dir / f"total_result_{perm_idx}.png"
@@ -112,7 +112,7 @@ def process_one_perm(args):
     pandas_plot_save(df_total_result, save_path=str(plot_path))
     df_total_result.to_csv(csv_path, index=False)
 
-    if perm_idx % 100 == 0:
+    if perm_idx % 20 == 0:
         print(f"[INFO] Processed {perm_idx} permutations.")
 
 #%% MAIN RUN

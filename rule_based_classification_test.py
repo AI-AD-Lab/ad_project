@@ -30,6 +30,10 @@ label_data = pd.read_csv(SINGLE_SCENARIO_SYNLOG_DATA_ROOT / 'label.csv')
 # RA ST UT LT RT LLC RLC
 labels = ['RA','ST', 'UT', 'LT', 'RT', 'LLC', 'RLC']
 
+
+idx_to_label = {idx: short_to_long_label[label] for idx, label in enumerate(labels)}
+
+print(idx_to_label)
 #%% DATA LOAD
 def data_load(data_file_path):
     USEDCOLUMNS = config['data_columns']
@@ -56,6 +60,7 @@ def pandas_plot_save(df, save_path:None|str=None):
 def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.DataFrame:
     labeled_data = [[] for _ in range(len(cls_label))]
     real_index = { short_to_long_label[label]:idx for idx, label in enumerate(class_perm) }
+    idx_to_label = {idx: short_to_long_label[label] for idx, label in enumerate(labels)} # 순열에 맞게 인덱스-긴라벨 매핑
 
     for file, label in zip(label_data['file_name'], label_data['trajectory type']):
         file_path = SINGLE_SCENARIO_SYNLOG_DATA_ROOT / file
@@ -91,49 +96,26 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
         result_list[-1] = COUNT
         labeled_data[real_index[label]].append(result_list)
 
-        outstanding_label_save_dir = Path(f'./output/plots/mis-classified/')
-        if label=='straight' and RA==1:
-            id = 'straight_RA'
-            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
-            save_dir.mkdir(parents=True, exist_ok=True)
+        outstanding_label_save_dir = Path(f'../FOR_REVISION')
+        selected_index = result_list[:-1].index(1)
 
-            plot_path = save_dir / f"{file}.png"
-            draw_acceleration_y_plot(data, plot_path)
+        if selected_index == 7 or idx_to_label[selected_index] != label:
 
-        if label=='roundabout' and RLC==1 and RA!=1:
-            id = 'roundabout_RLC'
-            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
-            save_dir.mkdir(parents=True, exist_ok=True)
+            if selected_index == 7:
+                predict_label = "NO_LABEL"
+            else:
+                predict_label = idx_to_label[selected_index]
 
-            plot_path = save_dir / f"{file}.png"
-            draw_acceleration_y_plot(data, plot_path)
+            true_label = label
+            file_stem = Path(file).stem
+            tmp_error_save_dir = outstanding_label_save_dir / f"real_{true_label}_as_predict_{predict_label}"
 
+            acc_path = outstanding_label_save_dir / f"real_{true_label}_as_predict_{predict_label}" / f"{file_stem}_acc.png"
 
-        if label=='straight' and result_list[-2] == 1:
-            id = 'straight_NO_LABEL'
-            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
-            save_dir.mkdir(parents=True, exist_ok=True)
-
-            plot_path = save_dir / f"{file}.png"
-            draw_acceleration_y_plot(data, plot_path)
-
-
-        if label=='right_turn' and ST == 1:
-            id = 'right_turn_ST'
-            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
-            save_dir.mkdir(parents=True, exist_ok=True)
-
-            plot_path = save_dir / f"{file}.png"
-            draw_acceleration_y_plot(data, plot_path)
-
-
-        if label=='left_lane_change' and ST == 1:
-            id = 'left_lane_change_ST'
-            save_dir = Path(f'{outstanding_label_save_dir}/{id}/')
-            save_dir.mkdir(parents=True, exist_ok=True)
-
-            plot_path = save_dir / f"{file}.png"
-            draw_acceleration_y_plot(data, plot_path)
+            if not os.path.exists(tmp_error_save_dir):
+                os.mkdir(tmp_error_save_dir)
+            # time_base_plot(data, save_path=str(tmp_error_save_path+'_time.png'))
+            draw_acceleration_y_plot(data, save_path=acc_path)
 
     total_result = []
     for i, label in enumerate(labeled_data):

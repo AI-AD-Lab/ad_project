@@ -3,6 +3,7 @@
 from pathlib import Path
 from _utils.utils_plot3 import plot_driving_trajectory
 from _utils.utils_plot import draw_acceleration_y_plot
+from _utils.utils_plot import dataframe_2d_plot
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -32,11 +33,15 @@ if __name__=='__main__':
         trajectory_plot_name = statelog.replace('statelog.csv', '_trajectory_plot.png')
         y_axis_acceleration_plot_name = statelog.replace('statelog.csv', '_y_axis_acceleration_plot.png')
 
-        # Plotting the driving trajectory, visualizing velocity and saving the plot
-        trajectory_saving_path = example_dir_path + trajectory_plot_name
+        # # Plotting the driving trajectory, visualizing velocity and saving the plot
+        # trajectory_saving_path = example_dir_path + trajectory_plot_name
         # plot_driving_trajectory(example_df, save_path=trajectory_saving_path , visualize_velocity=True)
 
-        # Plotting the y-axis acceleration and saving the plot
-        y_axis_acceleration_saving_path = example_dir_path + y_axis_acceleration_plot_name
-        draw_acceleration_y_plot(example_df, save_path=y_axis_acceleration_saving_path)
+        # # Plotting the y-axis acceleration and saving the plot
+        # y_axis_acceleration_saving_path = example_dir_path + y_axis_acceleration_plot_name
+        # draw_acceleration_y_plot(example_df, save_path=y_axis_acceleration_saving_path)
+
+        print(statelog)
+        dataframe_2d_plot(example_df, col1='time (sec)', col2='RotationZ (deg)', rolling_window=100, sampling_hz=50)
+
 # %%

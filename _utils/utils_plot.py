@@ -47,12 +47,18 @@ def create_colored_line_segments(x, y, z, velocity, cmap='plasma', norm=None):
     return lc
 
 # Simple DataFrame 2d plot
-def dataframe_2d_plot(df, col1='time (sec)', col2='speed'):
+def dataframe_2d_plot(df, col1='time (sec)', col2='speed', rolling_window=100, sampling_hz=50):
+
+    # data smoothing, reduce noise
+    df_copy = df.loc[:, ~df.columns.isin(['Entity'])].copy()
+    df_rolling = df_copy.rolling(rolling_window).mean().bfill()
+    df_rolling['time (sec)'] = df_rolling.index * (1/sampling_hz) # index * 0.02
+
     plt.figure(figsize=(6, 5))
-    plt.plot(df[col1], df[col2], marker='o')
+    plt.plot(df_rolling[col1], df_rolling[col2], marker='o')
     plt.title(f"{col1} vs {col2}")
-    plt.xlim(df[col1].min(), df[col1].max())
-    plt.ylim(df[col2].min(), df[col2].max())
+    plt.xlim(df_rolling[col1].min(), df_rolling[col1].max())
+    plt.ylim(df_rolling[col2].min(), df_rolling[col2].max())
 
     plt.xlabel(f"{col1}")
     plt.ylabel(f"{col2}")

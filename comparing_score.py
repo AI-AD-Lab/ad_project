@@ -4,15 +4,14 @@ import matplotlib
 import numpy as np
 from pathlib import Path
 import os
-from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 import shutil
 
 # parent_dir_path = Path(__file__).resolve().parent.parent
 # result_path = parent_dir_path / 'score_250703_RA_No_MAX_duration'
 # best_score_path = parent_dir_path / 'best_score_no_max_duration'
 
-base_path = Path('./output/plots')
-result_path = base_path / 'score'
+base_path = Path('../FOR_REVISION')
+result_path = base_path / 'score_data'
 best_score_path = base_path / 'best_score_max_duration'
 if not best_score_path.exists():
     best_score_path.mkdir(parents=True, exist_ok=True)
@@ -77,7 +76,7 @@ print( best_f1_score, file_name)
 
 #%%
 best_files = []
-best_sccore_cls_priority = []
+best_score_cls_priority = []
 for _f1, _file in np_sort:
 
     if float(_f1) < best_f1_score:
@@ -91,10 +90,10 @@ for _f1, _file in np_sort:
     data_file_path = result_path / _file
     data = pd.read_csv(data_file_path)
 
-    best_sccore_cls_priority.append(data.columns)
+    best_score_cls_priority.append(data.columns)
 
 
-for_csv_data = pd.DataFrame(best_sccore_cls_priority)
+for_csv_data = pd.DataFrame(best_score_cls_priority)
 for_csv_data.to_csv(best_score_path/'priority.csv')
 
 #%%
@@ -110,6 +109,35 @@ for file in best_files:
 
     # print('-'*30)
     # print(f"file name: {file}")
-    # print(f"precision:{precision}, recall:{recall}, f1-score:{f1}")
+    print(f"precision:{precision}, recall:{recall}, f1-score:{f1}")
 
+# %%
+
+# worst case
+f1_worst_case = np_sort[-1]
+print(f"F1 Score - Worst Case: {f1_worst_case}")
+worst_example = result_path / f1_worst_case[1]
+pandas_worst_result_data = pd.read_csv(worst_example)
+worst_score = compute_score(pandas_worst_result_data)
+print(worst_score)
+
+f1_worst_score = float(worst_score['f1'])
+f1_best_score = float(best_score['f1'])
+
+# normal distribution
+f1_normal_distribution = np.array(np_sort[:, 0], dtype=float)
+
+f1_mean = np.mean(f1_normal_distribution)
+f1_std = np.std(f1_normal_distribution)
+
+print(f"F1 Score - Mean: {f1_mean}, Std: {f1_std}")
+
+import matplotlib.pyplot as plt
+plt.bar(range(len(f1_normal_distribution)), f1_normal_distribution)
+plt.axhline(y=f1_mean, color='r', linestyle='--', label=f'Mean ({f1_mean:.4f})')
+plt.axhline(y=f1_worst_score, color='b', linestyle='--', label=f'Worst Case ({f1_worst_score:.4f})')
+plt.axhline(y=f1_best_score, color='g', linestyle='--', label=f'Best Case ({f1_best_score:.4f})')
+# y축 범위 제한
+plt.ylim(0.5, 1)
+plt.legend()
 # %%

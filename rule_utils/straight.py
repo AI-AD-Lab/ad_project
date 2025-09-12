@@ -6,7 +6,7 @@ def detect_straight(
     ay_col='AccelerationY(EntityCoord) (m/s2)',
     sampling_hz=50,
     rolling_window = 100,
-    abs_normal_threshold=0.05,
+    abs_normal_threshold=0.1,
     abs_threshold=0.3, # 0.3? 0.6?
     duration_sec=8
 ):
