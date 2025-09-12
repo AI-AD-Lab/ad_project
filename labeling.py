@@ -4,54 +4,9 @@ import pandas as pd
 from pathlib import Path
 import os
 import csv
+from config import config
 
-trajectory_type = {
-    'ST':'straight',
-    'RT':'right_turn',
-    'LT':'left_turn',
-    'UT':'U_turn',
-    'LLC':'left_lane_change',
-    'RLC':'right_lane_change',
-    'RA':'roundabout'
-}
-
-
-# %%
-sample_scenario_log_root_dir_path = Path(r'../simulation_LLC/')
-items_in_root_dir = os.listdir(sample_scenario_log_root_dir_path)
-
-sample_scenario_type_dir_path = [ sample_scenario_log_root_dir_path /dir for dir in items_in_root_dir
-                                 if os.path.isdir(sample_scenario_log_root_dir_path / dir)]
-
-#%%
-
-
-
-# total_label_data = []
-
-# for scenario_type_dir_path in sample_scenario_type_dir_path:
-
-#     label = [trajectory_type[key] for key in trajectory_type if key in str(scenario_type_dir_path)]
-#     if label == []:
-#         continue
-
-#     item_in_sample_scenario_type_dir = os.listdir(scenario_type_dir_path)
-
-#     event_logs = [event for event in item_in_sample_scenario_type_dir
-#                 if event.endswith('_eventlog.csv')]
-
-#     labeled_data = [(logs, label[0]) for logs in event_logs]
-#     total_label_data.extend(labeled_data)
-
-# df_total_label_data = pd.DataFrame(total_label_data, columns=['file_name', 'trajectory type'])
-
-# # %%
-
-# label_save_path = sample_scenario_log_root_dir_path / 'label.csv'
-# print(label_save_path)
-# df_total_label_data.to_csv(label_save_path, index=False, encoding="utf-8")
-
-# %%
+trajectory_type = config['Short_to_Long_Label']
 
 def get_trajectory_type(file_name):
     """
@@ -62,29 +17,39 @@ def get_trajectory_type(file_name):
             return trajectory_type[key]
     return None
 
-sample_scenario_log_root_dir_path = Path(r'../simulation_TOTAL_250626/')
-items_in_root_dir = os.listdir(sample_scenario_log_root_dir_path)
-# print(f"items_in_root_dir: {items_in_root_dir[:5]}")
+def get_statelog_list(dir_path):
+    items = os.listdir(dir_path)
+    items = [item for item in items if item.endswith('_statelog.csv')]
+    return items
 
-event_log_files = [file for file in items_in_root_dir if file.endswith('_statelog.csv')]
-# print(f"event_log_files: {event_log_files[:5]}")
+def make_label_csv(dir_path:Path|str|None=None, save_path:Path|str|None=None):
 
+    if dir_path is None:
+        raise ValueError("dir_path must be provided")
+    if save_path is None:
+        raise ValueError("save_path must be provided")
 
-total_label_data = []
-for file in event_log_files:
-    label = get_trajectory_type(file)
+    event_log_files = get_statelog_list(dir_path)
 
-    if label is None:
-        print(f"Warning: No trajectory type found for file '{file}'")
-        continue
+    total_label_data = []
+    for file in event_log_files:
+        label = get_trajectory_type(file)
 
-    total_label_data.append((file, label))
+        if label is None:
+            print(f"Warning: No trajectory type found for file '{file}'")
+            continue
 
-df_total_label_data = pd.DataFrame(total_label_data, columns=['file_name', 'trajectory type'])
-# print(df_total_label_data.head())
+        total_label_data.append((file, label))
 
-label_save_path = sample_scenario_log_root_dir_path / 'label.csv'
-print(label_save_path)
-df_total_label_data.to_csv(label_save_path, index=False, encoding="utf-8")
+    df_total_label_data = pd.DataFrame(total_label_data, columns=['file_name', 'trajectory type'])
+    df_total_label_data.to_csv(save_path, index=False, encoding="utf-8")
 
-# %%
+    return df_total_label_data
+
+if __name__ == '__main__':
+    # Example usage
+    sample_scenario_log_root_dir_path = Path(r'../simulation_TOTAL_250626/')
+    label_save_path = sample_scenario_log_root_dir_path / 'label.csv'
+
+    make_label_csv(dir_path=sample_scenario_log_root_dir_path, save_path=label_save_path)
+    print(f"Labels saved to {label_save_path}")

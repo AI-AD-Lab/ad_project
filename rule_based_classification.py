@@ -1,17 +1,17 @@
-#%%
+# IMPORTS
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import os
 import matplotlib.pyplot as plt
-from _utils.data_processing_utils import normalize_time
-from _utils.utils_plot import time_base_plot, draw_ay_plot
-from rule_utils.left_turn import *
-from rule_utils.right_turn import *
 from config import config
 import itertools
 from multiprocessing import Pool, cpu_count
-#%%
+
+
+from _utils.data_processing_utils import data_load
+from _utils.plot_utils import plot_confusion_matrix_table
+
 from rule_utils.lane_change import detect_right_lane_change, detect_left_lane_change
 from rule_utils.straight import detect_straight
 from rule_utils.left_turn import detect_left_turn
@@ -19,104 +19,63 @@ from rule_utils.right_turn import detect_right_turn
 from rule_utils.roundabout import detect_roundabout
 from rule_utils.u_turn import detect_u_turn
 
+'''
+Folder Structure:
+    |- AD_Project (Project Root)
+        |- greedy_search_priority.py  <--- This file
+    |- simulator_stateliog_data_dir (simulation_TOTAL_250626)
+        |- 20250617_152628_R_KR_PG_KATRI_LRST1_01_statelog.csv
+        |- label.csv
+        |- ...
+'''
 
-# 기본 경로 설정
-MORAISIM_PATH = Path(__file__).resolve().parent.parent
+#CONFIG
+GRANDPARENTS_DIR = Path(__file__).resolve().parent.parent
+SYN_LOG_DATA_ROOT_DIR = GRANDPARENTS_DIR / config['UNCLE_DIR_NAME']
 
-cls_label = config['class_to_label']
-label_cls = config['label_to_class']
 short_to_long_label = config['Short_to_Long_Label']
-
-# setting for what is excuted
-SINGLE_SCENARIO_SYNLOG_DATA_ROOT = MORAISIM_PATH /  'simulation_TOTAL_250626'  # 시간이 일정한 데이터 파일: SYNC
-label_data = pd.read_csv(SINGLE_SCENARIO_SYNLOG_DATA_ROOT / 'label.csv')
-
-# initial priority labels and permutations
+label_data = pd.read_csv(SYN_LOG_DATA_ROOT_DIR / 'label.csv')
 labels = ['RA','ST', 'UT', 'LT', 'RT', 'LLC', 'RLC']
 perms = list(itertools.permutations(labels))
 
-#%%
-def data_load(data_file_path):
-    """ Load data from a CSV file and normalize the time column. """
-    USEDCOLUMNS = config['data_columns']
-
-    if not os.path.exists(data_file_path):
-        raise FileNotFoundError(f"The file {data_file_path} does not exist.")
-
-    # Load the data
-    _data = pd.read_csv(data_file_path)
-    _data = _data[USEDCOLUMNS]
-    return _data
-
-def pandas_plot_save(df, save_path:None|str=None):
-    ''' Render a pandas DataFrame as a table and save or show it. '''
-
-    fig, ax = plt.subplots(figsize=(5, 2))
-
-    # 테이블 렌더링
-    ax.axis('off')  # 축 제거
-    table = ax.table(cellText=df.values,
-                    colLabels=df.columns,
-                    cellLoc='center',
-                    loc='center')
-
-    table.scale(1, 1.5)  # 크기 조절
-    plt.tight_layout()
-    if save_path is None:
-        plt.show()
-    else:
-        plt.savefig(save_path, dpi=300)
-
-    plt.close(fig)
-
+# MAIN CLASSIFICATION FUNCTION
 def excute_rule_based_classification(class_perm:list[str]) -> pd.DataFrame:
-    """
-    Execute the rule-based classification for trajectory types.
-    This function processes the data, applies classification rules, and saves the results.
-    """
 
-    labeled_data = [[] for _ in range(len(cls_label))]
-    real_index = { short_to_long_label[label]:idx for idx, label in enumerate(class_perm)}
+    labeled_data = [[] for _ in range(len(labels))] # empty list for each class
+    real_index = { short_to_long_label[label]:idx for idx, label in enumerate(class_perm) }
 
     for file, label in zip(label_data['file_name'], label_data['trajectory type']):
-
-        file_path = SINGLE_SCENARIO_SYNLOG_DATA_ROOT / file
+        file_path = SYN_LOG_DATA_ROOT_DIR / file
         data = data_load(file_path)
 
         ST , RT, LT, UT, LLC, RLC, RA = 0, 0, 0, 0, 0, 0, 0
-        NO_LABEL = 0
         COUNT = 1
 
-        # predict each label
         LLC = detect_left_lane_change(data, duration_sec=0.7, threshold=0.2)
         RLC = detect_right_lane_change(data, duration_sec=0.7, threshold=0.2)
         ST = detect_straight(data, abs_normal_threshold=0.05, abs_threshold=0.3, duration_sec=8)
         RT = detect_right_turn(data)
         LT = detect_left_turn(data)
-        RA = detect_roundabout(data)
+        RA = detect_roundabout(data, max_duration_sec=15)
         UT = detect_u_turn(data)
 
-        label_variable = { # update label_variable to match the perm order
-            'RA': RA, 'ST': ST, 'UT': UT, 'LT': LT,
-            'RT': RT, 'LLC': LLC,'RLC': RLC
+        label_variable = {
+            'RA': RA, 'ST': ST, 'UT': UT,
+            'LT': LT, 'RT': RT, 'LLC': LLC, 'RLC': RLC
         }
 
-        values = [ label_variable[label] for label in perm ] # 우선순위에 맞게 정렬, prediction
-
-        # 첫 번째만 셀렉
-        for i, value in enumerate(values) :
+        values = [label_variable[label] for label in class_perm]
+        for i, value in enumerate(values):
             if value:
                 result_list = [0] * 9
                 result_list[i] = 1
-                break  # 첫 번째 1만 인정
-
-        # No label case
-        if not any(values):
-            result_list = [0] * 9
-            result_list[-2] = 1
+                break
+            else:
+                result_list = [0] * 9
+                result_list[-2] = 1  # NO_LABEL
 
         result_list[-1] = COUNT
-        labeled_data[real_index[label]].append(result_list) # real-> prediction 넣기
+        labeled_data[real_index[label]].append(result_list)
 
     total_result = []
     for i, label in enumerate(labeled_data):
@@ -130,19 +89,28 @@ def excute_rule_based_classification(class_perm:list[str]) -> pd.DataFrame:
 
     return df_total_result
 
-for perm_idx, perm in enumerate(perms):
-    labeled_data = [[] for _ in range(len(cls_label))]
-    real_index = { short_to_long_label[label]:idx for idx, label in enumerate(perm)}
-
+# MULTIPROCESSING WRAPPER
+def process_one_perm(args):
+    perm_idx, perm = args
     df_total_result = excute_rule_based_classification(class_perm=perm)
 
-    pandas_save_path = './output/plots/score/'
-    if not os.path.exists(pandas_save_path):
-        os.makedirs(pandas_save_path)
-    pandas_plot_save(df_total_result, save_path=pandas_save_path + f"total_result_{perm_idx}.png")
-    df_total_result.to_csv(pandas_save_path + f"total_result_{perm_idx}.csv", index=False)
+    save_dir = Path('./output/score_data')
+    save_dir.mkdir(parents=True, exist_ok=True)
 
-    if perm_idx % 100 == 0:
-        print(f'Processed {perm_idx} permutations...')
+    plot_path = save_dir / f"total_result_{perm_idx}.png"
+    csv_path = save_dir / f"total_result_{perm_idx}.csv"
 
+    plot_confusion_matrix_table(df_total_result, save_path=str(plot_path))
+    df_total_result.to_csv(csv_path, index=False)
+
+    if perm_idx % 20 == 0:
+        print(f"[INFO] Processed {perm_idx} permutations.")
+
+#%% MAIN RUN
+if __name__ == "__main__":
+    num_workers = min(cpu_count(), 6)
+    print(f"Starting multiprocessing with {num_workers} workers...")
+
+    with Pool(num_workers) as pool:
+        pool.map(process_one_perm, list(enumerate(perms)))
 

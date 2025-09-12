@@ -1,5 +1,3 @@
-from pathlib import Path
-
 config = {
 
     "Short_to_Long_Label" : {
@@ -42,5 +40,6 @@ config = {
         'RotationZ (deg)', 'FrontWheelAngle (deg)'],
 
     "SAMPLING_RATE": 50,  # Hz 1/0.02
-    # "MORAISIM_PATH": Path(__file__).resolve().parent.parent,
+
+    "UNCLE_DIR_NAME": "simulation_TOTAL_250626"
 }

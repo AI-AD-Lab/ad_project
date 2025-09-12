@@ -1,12 +1,10 @@
-import numpy as np
-import pandas as pd
-
+from rule_utils.common_util import rolling
 
 def detect_u_turn(
     df,
     ay_col='AccelerationY(EntityCoord) (m/s2)',
     sampling_hz=50,
-    rolling_window = 100,
+    rolling_seconds=2,
     threshold=2.0,
     duration_sec=3
 ):
@@ -22,10 +20,7 @@ def detect_u_turn(
     - duration_sec: 최소 지속 시간 (초 단위)
     """
 
-    df_copy = df.loc[:, ~df.columns.isin(['Entity'])].copy()
-    df_rolling = df_copy.rolling(rolling_window).mean().bfill()
-    df_rolling['time (sec)'] = df_rolling.index * (1/sampling_hz)
-
+    df_rolling = rolling(df, rolling_seconds=rolling_seconds, sampling_hz=sampling_hz)
     ay = df_rolling[ay_col].values
     min_frames = int(duration_sec * sampling_hz)
 
