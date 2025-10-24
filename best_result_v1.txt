@@ -1,0 +1,52 @@
+BEST SCORE: 0.975169
+BEST PARAMS:
+  llc_threshold: 0.194145
+  llc_duration_sec: 1.197216
+  rlc_threshold: 0.137831
+  rlc_duration_sec: 0.833088
+  st_abs_normal_threshold: 0.059045
+  st_abs_threshold: 0.109141
+  st_duration_sec: 11.658522
+  rt_right_threshold: 1.183795
+  rt_duration_sec: 1.574704
+  lt_left_threshold: -0.427932
+  lt_duration_sec: 4.137019
+  ra_threshold_neg: -0.146373
+  ra_threshold_pos: 0.097355
+  ra_duration_sec: 1.454986
+  ra_max_duration_sec: 14.449369
+  ut_threshold: 2.187467
+  ut_duration_sec: 2.823866
+
+
+탐색범위:
+    # LLC
+    llc_threshold = trial.suggest_float("llc_threshold", 0.05, 0.35)
+    llc_duration  = trial.suggest_float("llc_duration_sec", 0.2, 1.2)
+
+    # RLC
+    rlc_threshold = trial.suggest_float("rlc_threshold", 0.05, 0.35)
+    rlc_duration  = trial.suggest_float("rlc_duration_sec", 0.2, 1.2)
+
+    # ST
+    st_abs_norm_th = trial.suggest_float("st_abs_normal_threshold", 0.01, 0.09)
+    st_abs_th      = trial.suggest_float("st_abs_threshold", 0.05, 0.55)
+    st_duration    = trial.suggest_float("st_duration_sec", 4.0, 12.0)
+
+    # RT
+    rt_right_th = trial.suggest_float("rt_right_threshold", 0.4, 1.6)
+    rt_duration = trial.suggest_float("rt_duration_sec", 1.5, 4.5)
+
+    # LT (typo 주의: left_threshold)
+    lt_left_th  = trial.suggest_float("lt_left_threshold", -1.6, -0.4)
+    lt_duration = trial.suggest_float("lt_duration_sec", 1.5, 4.5)
+
+    # RA
+    ra_th_neg    = trial.suggest_float("ra_threshold_neg", -0.55, -0.05)
+    ra_th_pos    = trial.suggest_float("ra_threshold_pos",  0.05,  0.55)
+    ra_duration  = trial.suggest_float("ra_duration_sec", 0.5, 2.1)
+    ra_max_dur   = trial.suggest_float("ra_max_duration_sec", 8.0, 18.0)
+
+    # UT
+    ut_threshold = trial.suggest_float("ut_threshold", 0.6, 3.4)
+    ut_duration  = trial.suggest_float("ut_duration_sec", 1.5, 4.5)

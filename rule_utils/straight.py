@@ -65,3 +65,59 @@ def detect_straight(
         return 1
 
     return 0
+
+
+def refactorying_detect_straight(
+    df,
+    ay_col='AccelerationY(EntityCoord) (m/s2)',
+    sampling_hz=50,
+    rolling_seconds=2,
+    abs_normal_threshold=0.1,
+    abs_threshold=0.3,  # 0.3? 0.6?
+    duration_sec=8
+):
+    """
+    ay(횡가속도) 기반 직선/완만한 곡선 구간 탐지.
+    결과: 직선(또는 완만한 곡선 포함으로 간주) -> 1, 아니면 0
+    """
+
+    df_rolling = rolling(df, rolling_seconds=rolling_seconds, sampling_hz=sampling_hz)
+    ay = df_rolling[ay_col].values
+    min_frames = int(duration_sec * sampling_hz)
+
+    def find_starting_idxs(condition_array):
+        """True가 min_frames 이상 연속된 구간의 시작 인덱스 목록을 반환.
+        없으면 None 반환 (기존 동작과 동일한 진리값 평가를 위해)."""
+        starts = []
+        count = 0
+        for i, cond in enumerate(condition_array):
+            if cond:
+                count += 1
+                if count >= min_frames:
+                    idx = i - count + 1
+                    if idx not in starts:
+                        starts.append(idx)
+            else:
+                count = 0
+        return starts if starts else None
+
+    # 1) ay의 절대값이 모두 매우 작으면 직선으로 판단
+    if all(abs(ay) <= abs_normal_threshold):
+        return 1
+
+    # 2) 시작 시점 대비 ay 변화폭이 매우 작으면(완만한 곡선) 직선으로 판단
+    ay_diff = ay - ay[0]
+    if all(abs(ay_diff) <= abs_normal_threshold * 2):
+        return 1
+
+    # 3) S자 등에서 한쪽 방향의 가속도가 일정 시간 이상 지속되면 직선(완만 포함)으로 판단
+    ay_neg = ay < -abs_threshold
+    ay_pos = ay >  abs_threshold
+
+    neg_start = find_starting_idxs(ay_neg)
+    pos_start = find_starting_idxs(ay_pos)
+
+    if neg_start or pos_start:
+        return 1
+
+    return 0

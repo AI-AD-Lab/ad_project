@@ -1,0 +1,7 @@
+LLC - duration_sec=0.7, threshold=0.2
+RLC - duration_sec=0.7 threshold=0.2
+ST - abs_normal_threshold=0.05, abs_threshold=0.3, duration_sec=8
+RT - right_threshold=1.0, duration_sec=3
+LT - left_threshold=-1.0, duration_sec=3    
+RA - max_duration_sec=15, rolling_seconds=2,threshold_neg=-0.3, threshold_pos=+0.3, duration_sec=1.3,
+UT - duration_sec=3, threshold=2.0,

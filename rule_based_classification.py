@@ -51,13 +51,13 @@ def excute_rule_based_classification(class_perm:list[str]) -> pd.DataFrame:
         ST , RT, LT, UT, LLC, RLC, RA = 0, 0, 0, 0, 0, 0, 0
         COUNT = 1
 
-        LLC = detect_left_lane_change(data, duration_sec=0.7, threshold=0.2)
-        RLC = detect_right_lane_change(data, duration_sec=0.7, threshold=0.2)
-        ST = detect_straight(data, abs_normal_threshold=0.05, abs_threshold=0.3, duration_sec=8)
-        RT = detect_right_turn(data)
-        LT = detect_left_turn(data)
-        RA = detect_roundabout(data, max_duration_sec=15)
-        UT = detect_u_turn(data)
+        LLC = detect_left_lane_change(data, duration_sec=0.875357, threshold=0.212362)
+        RLC = detect_right_lane_change(data, duration_sec=0.833088, threshold=0.137831)
+        ST = detect_straight(data, abs_normal_threshold=0.059045, abs_threshold=0.109141, duration_sec=11.658522)
+        RT = detect_right_turn(data, right_threshold=1.183795, duration_sec=1.574704)
+        LT = detect_left_turn(data, left_threshold=-0.427932, duration_sec=4.137019)
+        RA = detect_roundabout(data, threshold_neg=-0.146373, threshold_pos=0.097355, duration_sec=1.454986, max_duration_sec=14.449369)
+        UT = detect_u_turn(data, threshold=2.187467, duration_sec=2.823866)
 
         label_variable = {
             'RA': RA, 'ST': ST, 'UT': UT,
