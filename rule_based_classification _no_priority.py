@@ -8,7 +8,7 @@ from rule_utils.left_turn import *
 from rule_utils.right_turn import *
 from config import config
 
-from _utils.data_processing_utils import rolling, data_load
+from _utils.data_processing_utils import data_load
 from _utils.plot_utils import plot_confusion_matrix_table
 
 from rule_utils.lane_change import detect_right_lane_change, detect_left_lane_change
@@ -20,10 +20,11 @@ from rule_utils.u_turn import detect_u_turn
 
 # CONFIG
 GRANDPARENTS_DIR = Path(__file__).resolve().parent.parent
-SYN_LOG_DATA_ROOT_DIR = GRANDPARENTS_DIR / config['UNCLE_DIR_NAME']
+SYN_LOG_DATA_ROOT_DIR = GRANDPARENTS_DIR / "simulation_TOTAL_250626_2"
+# SYN_LOG_DATA_ROOT_DIR = GRANDPARENTS_DIR / config['UNCLE_DIR_NAME']
 short_to_long_label = config['Short_to_Long_Label']
 label_data = pd.read_csv(SYN_LOG_DATA_ROOT_DIR / 'label.csv')
-labels = ['RA','ST', 'UT', 'LT', 'RT', 'LLC', 'RLC']
+labels = ['RA', 'UT', 'LT', 'RT', 'ST', 'LLC', 'RLC']
 
 # MAIN CLASSIFICATION FUNCTION
 def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.DataFrame:
@@ -37,13 +38,13 @@ def excute_rule_based_classification_no_priority(class_perm:list[str]) -> pd.Dat
         ST , RT, LT, UT, LLC, RLC, RA = 0, 0, 0, 0, 0, 0, 0
         COUNT = 1
 
-        LLC = detect_left_lane_change(data, duration_sec=0.7, threshold=0.2)
-        RLC = detect_right_lane_change(data, duration_sec=0.7, threshold=0.2)
-        ST = detect_straight(data, abs_normal_threshold=0.05, abs_threshold=0.3, duration_sec=8)
-        RT = detect_right_turn(data)
-        LT = detect_left_turn(data)
-        RA = detect_roundabout(data, max_duration_sec=15)
-        UT = detect_u_turn(data)
+        LLC = detect_left_lane_change(data, duration_sec=0.875357, threshold=0.212362)
+        RLC = detect_right_lane_change(data, duration_sec=0.833088, threshold=0.137831)
+        ST = detect_straight(data, abs_normal_threshold=0.059045, abs_threshold=0.109141, duration_sec=7.532441)
+        RT = detect_right_turn(data, right_threshold=1.183795, duration_sec=1.574704,  max_duration_sec=5.47996)
+        LT = detect_left_turn(data, left_threshold=-0.427932, duration_sec=4.137019, max_duration_sec=6.156220)
+        UT = detect_u_turn(data, threshold=2.187467, duration_sec=2.823866)
+        RA = detect_roundabout(data, threshold_neg=-0.146373, threshold_pos=0.097355, duration_sec=1.454986, max_duration_sec=14.449369)
 
         label_variable = {
             'RA': RA, 'ST': ST, 'UT': UT,

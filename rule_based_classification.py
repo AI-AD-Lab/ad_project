@@ -31,11 +31,15 @@ Folder Structure:
 
 #CONFIG
 GRANDPARENTS_DIR = Path(__file__).resolve().parent.parent
-SYN_LOG_DATA_ROOT_DIR = GRANDPARENTS_DIR / config['UNCLE_DIR_NAME']
+# SYN_LOG_DATA_ROOT_DIR = GRANDPARENTS_DIR / config['UNCLE_DIR_NAME']
+SYN_LOG_DATA_ROOT_DIR = GRANDPARENTS_DIR / 'simulation_TOTAL_250626_2'
 
 short_to_long_label = config['Short_to_Long_Label']
 label_data = pd.read_csv(SYN_LOG_DATA_ROOT_DIR / 'label.csv')
-labels = ['RA','ST', 'UT', 'LT', 'RT', 'LLC', 'RLC']
+# labels = ['RA','ST', 'UT', 'LT', 'RT', 'LLC', 'RLC']
+# labels = ['ST','RA', 'UT', 'LT', 'RT', 'LLC', 'RLC']
+# labels = ['UT', 'RA', 'LT', 'RT', 'ST', 'LLC', 'RLC']
+labels = ['RA', 'UT', 'LT', 'RT', 'ST', 'LLC', 'RLC']
 perms = list(itertools.permutations(labels))
 
 # MAIN CLASSIFICATION FUNCTION
@@ -57,7 +61,7 @@ def excute_rule_based_classification(class_perm:list[str]) -> pd.DataFrame:
         RT = detect_right_turn(data, right_threshold=1.183795, duration_sec=1.574704)
         LT = detect_left_turn(data, left_threshold=-0.427932, duration_sec=4.137019)
         RA = detect_roundabout(data, threshold_neg=-0.146373, threshold_pos=0.097355, duration_sec=1.454986, max_duration_sec=14.449369)
-        UT = detect_u_turn(data, threshold=2.187467, duration_sec=2.823866)
+        UT = detect_u_turn(data, threshold=-2.187467, duration_sec=2.823866)
 
         label_variable = {
             'RA': RA, 'ST': ST, 'UT': UT,
@@ -89,12 +93,83 @@ def excute_rule_based_classification(class_perm:list[str]) -> pd.DataFrame:
 
     return df_total_result
 
+
+def optimiezd_classification(class_perm:None|list) -> pd.DataFrame:
+    # 준비: 행 인덱스(정답 라벨 → 행번호), 열 정의
+    
+    if class_perm is None:
+        class_perm = labels
+    else:
+        class_perm = class_perm
+    
+    perm_array = list(class_perm)
+    cols = perm_array + ["NO_LABEL", "TOTAL"]
+    k = len(perm_array)
+
+    # 각 정답 라벨(행)에 대한 누적합 벡터 초기화
+    # totals[row_idx] = [0]*(k+2)
+    totals = {}
+    for idx, lab in enumerate(perm_array):
+        totals[idx] = [0] * (k + 2)
+
+    # 정답 라벨을 행 인덱스로 매핑 (원코드 호환)
+    real_index = {short_to_long_label[label]: idx for idx, label in enumerate(class_perm)}
+
+    # detect 함수 디스패처 (순서대로 평가 → True면 즉시 중단)
+    def eval_in_order(data):
+        # class_perm 순서대로 필요할 때만 평가
+        for i, lab in enumerate(perm_array):
+            if lab == 'LLC':
+                if detect_left_lane_change(data, duration_sec=0.875357, threshold=0.212362):
+                    return i
+            elif lab == 'RLC':
+                if detect_right_lane_change(data, duration_sec=0.833088, threshold=0.137831):
+                    return i
+            elif lab == 'ST':
+                if detect_straight(data, abs_normal_threshold=0.059045, abs_threshold=0.109141, duration_sec=7.532441):
+                    return i
+            elif lab == 'RT':
+                if detect_right_turn(data, right_threshold=1.183795, duration_sec=1.574704, max_duration_sec=5.47996):
+                    return i
+            elif lab == 'LT':
+                if detect_left_turn(data, left_threshold=-0.427932, duration_sec=4.137019, max_duration_sec=6.156220):
+                    return i
+            elif lab == 'RA':
+                if detect_roundabout(data, threshold_neg=-0.146373, threshold_pos=0.097355,
+                                     duration_sec=1.454986, max_duration_sec=14): #14.449369
+                    return i
+            elif lab == 'UT':
+                if detect_u_turn(data, threshold=2.187467, duration_sec=2.823866):
+                    return i
+        return None  # 아무 클래스에도 해당 안 됨
+
+    # 메인 루프: 원패스 처리(집계 즉시 반영)
+    for file, gt_label in zip(label_data['file_name'], label_data['trajectory type']):
+        file_path = SYN_LOG_DATA_ROOT_DIR / file
+        data = data_load(file_path)  # I/O + 파싱 비용
+
+        pred_idx = eval_in_order(data)  # 조기 종료 가능
+
+        row_idx = real_index[gt_label]  # 정답 라벨이 가리키는 행
+        row = totals[row_idx]
+
+        if pred_idx is not None:
+            row[pred_idx] += 1
+        else:
+            row[k] += 1  # NO_LABEL
+        row[k + 1] += 1  # TOTAL (COUNT=1)
+
+    # DataFrame 생성
+    total_result = [totals[i] for i in range(len(perm_array))]
+    df_total_result = pd.DataFrame(total_result, columns=cols, index=perm_array)
+    return df_total_result
+
 # MULTIPROCESSING WRAPPER
 def process_one_perm(args):
     perm_idx, perm = args
-    df_total_result = excute_rule_based_classification(class_perm=perm)
+    df_total_result = optimiezd_classification(class_perm=perm)
 
-    save_dir = Path('./output/score_data')
+    save_dir = Path('./output/score_data_st')
     save_dir.mkdir(parents=True, exist_ok=True)
 
     plot_path = save_dir / f"total_result_{perm_idx}.png"
@@ -108,7 +183,7 @@ def process_one_perm(args):
 
 #%% MAIN RUN
 if __name__ == "__main__":
-    num_workers = min(cpu_count(), 6)
+    num_workers = min(cpu_count(), 8)
     print(f"Starting multiprocessing with {num_workers} workers...")
 
     with Pool(num_workers) as pool:

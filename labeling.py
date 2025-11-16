@@ -48,7 +48,7 @@ def make_label_csv(dir_path:Path|str|None=None, save_path:Path|str|None=None):
 
 if __name__ == '__main__':
     # Example usage
-    sample_scenario_log_root_dir_path = Path(r'../simulation_TOTAL_250626/')
+    sample_scenario_log_root_dir_path = Path(r'../simulation_TOTAL_250626_2/')
     label_save_path = sample_scenario_log_root_dir_path / 'label.csv'
 
     make_label_csv(dir_path=sample_scenario_log_root_dir_path, save_path=label_save_path)

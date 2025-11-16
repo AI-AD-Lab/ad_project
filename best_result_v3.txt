@@ -1,0 +1,6 @@
+# ST RA 순서 -> ST parameter 구하기
+BEST SCORE: 0.976082
+BEST PARAMS:
+  st_abs_normal_threshold: 0.077939
+  st_abs_threshold: 0.997547
+  st_duration_sec: 7.532441

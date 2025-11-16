@@ -280,7 +280,7 @@ class driving_trajectory_plotter:
                 fig_colorbar, ax_colorbar = plt.subplots(figsize=(1.0, 4.0))
                 fig_colorbar.subplots_adjust(left=0.5, right=0.8)
 
-                sm = ScalarMappable(norm=norm, cmap=color_map)
+                sm = ScalarMappable(norm=norm, cmap=self.color_map)
                 sm.set_array([])
 
                 cbar = fig_colorbar.colorbar(sm, cax=ax_colorbar)

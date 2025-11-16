@@ -10,6 +10,16 @@ config = {
         'RA':'roundabout'
     },
 
+    "Long_to_Short_Label" : {
+        'straight':'ST',
+        'right_turn':'RT',
+        'left_turn':'LT',
+        'U_turn':'UT',
+        'left_lane_change':'LLC',
+        'right_lane_change':'RLC',
+        'roundabout':'RA'
+    },
+
     "class_to_label":{
         1: "straight",
         2: "right_turn",
