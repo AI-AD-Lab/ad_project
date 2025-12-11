@@ -1,3 +1,4 @@
+#%%
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -64,6 +65,9 @@ for key, value in specific_dict.items():
 df_specific_dict = pd.DataFrame(tmp_specific_list, columns=['label', 'file_list'])
 # df_specific_dict.to_csv(Path(f'../FOR_REVISION/specific_label_file_list.csv'), index=False)
 
+print(df_specific_dict)
+
+#%%
 def confidence_interval(mean, std, confidence=0.99):
     if confidence == 0.95:
         z_score = 1.96  # 95% 신뢰구간에 해당하는 z-값

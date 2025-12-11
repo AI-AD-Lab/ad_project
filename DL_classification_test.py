@@ -429,33 +429,26 @@ if __name__ == "__main__":
     SYN_LOG_DATA_ROOT_DIR = GRANDPARENTS_DIR / 'simulation_TOTAL_250626_2'
     
     confusion_matrix_save_dir = './output/plots/score/'
-    # dataset = TrajectoryDataset(SYN_LOG_DATA_ROOT_DIR)
 
     total_len = []
 
-    # train_idx, test_idx = split_train_test_by_class(
-    # dataset.df,
-    # label_col="trajectory type",
-    # test_ratio=0.3,
-    # seed=42,
-    # )
 
-    # train_dataset = Subset(dataset, train_idx)
-    # test_dataset  = Subset(dataset, test_idx)
+    total_data = pd.read_csv(SYN_LOG_DATA_ROOT_DIR / 'label.csv')
     
-    # train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
-    # test_loader  = DataLoader(test_dataset, batch_size=1, shuffle=False)
-
     train_data, test_data = sample_specific_labels(
-        pd.read_csv(SYN_LOG_DATA_ROOT_DIR / 'label.csv'), ratio=0.3)
-    train_dataset = TrajectoryDataset_spec(SYN_LOG_DATA_ROOT_DIR,train_data)
+        total_data, ratio=0.3)
+    
+    train_dataset = TrajectoryDataset_spec(SYN_LOG_DATA_ROOT_DIR, train_data)
     test_dataset  = TrajectoryDataset_spec(SYN_LOG_DATA_ROOT_DIR, test_data)
 
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
     test_loader  = DataLoader(test_dataset, batch_size=1, shuffle=False)
+
+    total_dataset = TrajectoryDataset(SYN_LOG_DATA_ROOT_DIR, total_data)
+    total_loader  = DataLoader(total_dataset, batch_size=1, shuffle=False)
     
     models = {
-        "rnn": RNNModel(),
+        # "rnn": RNNModel(),
         "lstm": LSTMModel(),
         # "trans": TransformerModel()
     }
@@ -474,15 +467,21 @@ if __name__ == "__main__":
     }
 
     # 3) Optimizer/Scheduler 생성 자동화 (딱 5줄)
-    optimizers = {}
-    schedulers = {}
+    # optimizers = {}
+    # schedulers = {}
 
-    for name, model in models.items():
-        optimizers[name] = torch.optim.AdamW(model.parameters(), **optimizer_kwargs)
-        schedulers[name] = torch.optim.lr_scheduler.OneCycleLR(
-            optimizers[name], **scheduler_kwargs
-        )
+    # for name, model in models.items():
+    #     optimizers[name] = torch.optim.AdamW(model.parameters(), **optimizer_kwargs)
+    #     schedulers[name] = torch.optim.lr_scheduler.OneCycleLR(
+    #         optimizers[name], **scheduler_kwargs
+    #     )
 
+    model_weight_dir = Path("./output/model_weights/")
+    for name in models.keys():
+        weight_path = model_weight_dir / f"best_{name}_model_banila_all.pt"
+        models[name].load_state_dict(torch.load(weight_path))
+        print(f"Loaded weights for {name} from {weight_path}")
+    
     criterion = nn.CrossEntropyLoss()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
@@ -499,94 +498,57 @@ if __name__ == "__main__":
     test_loss_history = {name: [] for name in models.keys()}
     test_acc_history = {name: [] for name in models.keys()}
      
-    for epoch in range(EPOCHS):
-        # -----------------------
-        #  TRAIN 단계
-        # -----------------------
-        for name in models.keys():
-            total_loss_dict[name] = 0
-            total_acc_dict[name] = 0
+    from time import time
+    start_time = time()
 
-        total_samples = 0
+    # -----------------------
+    #  TEST 단계
+    # -----------------------
+    print("--- Test ---")
+    for name in models.keys():
+        total_loss_dict[name] = 0
+        total_acc_dict[name] = 0
 
-        print(f"\nEpoch {epoch+1}")
-        print("--- Train ---")
-        for data, idx, _ in train_loader:
-            ts = data.to(torch.float32).to(device)   # (B, 900, 9)
+    total_test_samples = 0
+
+    pred_dict = {name: [] for name in models.keys()}
+    true_dict = {name: [] for name in models.keys()}
+
+    # test는 gradient 없음
+    with torch.no_grad():
+        for data, idx, _ in total_loader:
+            ts = data.to(torch.float32).to(device)
             idx = idx.to(device)
             batch_size = ts.size(0)
-            total_samples += batch_size
+            total_test_samples += batch_size
 
-            # 각 모델에 대해 공통 처리
             for name in models.keys():
-                optimizers[name].zero_grad()
-
                 out = models[name](ts)
 
-                # 라벨이 1~7 → 0~6 변환
                 loss = criterion(out, idx - 1)
 
                 total_loss_dict[name] += loss.item() * batch_size
                 total_acc_dict[name] += (out.argmax(dim=1) == (idx - 1)).sum().item()
-                
-                loss.backward()
-                optimizers[name].step()
-                schedulers[name].step()
 
-        # epoch별 train 출력
-        for name in models.keys():
-            avg_loss = total_loss_dict[name] / total_samples
-            avg_acc  = total_acc_dict[name] / total_samples
-            print(f" {name}: loss - {avg_loss:.4f}, accuracy - {avg_acc:.4f}")
+                pred_dict[name].extend(out.cpu().tolist())
+                true_dict[name].extend((idx-1).cpu().tolist())
 
-            train_loss_history[name].append(avg_loss)
-            train_acc_history[name].append(avg_acc)
+    end_time = time()
+    print(f"Test Time: {end_time - start_time:.2f} seconds")
+    print("total test samples: {}".format(total_test_samples))
+    print("processing time per sample: {:.4f} seconds".format((end_time - start_time) / total_test_samples))
+    print("samples per second: {:.2f} samples/second".format(total_test_samples / (end_time - start_time)))
+    # epoch별 test 출력
+    f1_score_dict = {}
+    from sklearn.metrics import f1_score
+    for name in models.keys():
+        avg_loss = total_loss_dict[name] / total_test_samples
+        avg_acc  = total_acc_dict[name] / total_test_samples
 
-        # -----------------------
-        #  TEST 단계
-        # -----------------------
-        print("--- Test ---")
-        for name in models.keys():
-            total_loss_dict[name] = 0
-            total_acc_dict[name] = 0
-
-        total_test_samples = 0
-
-        # test는 gradient 없음
-        with torch.no_grad():
-            for data, idx, _ in test_loader:
-                ts = data.to(torch.float32).to(device)
-                idx = idx.to(device)
-                batch_size = ts.size(0)
-                total_test_samples += batch_size
-
-                for name in models.keys():
-                    out = models[name](ts)
-
-                    loss = criterion(out, idx - 1)
-
-                    total_loss_dict[name] += loss.item() * batch_size
-                    total_acc_dict[name] += (out.argmax(dim=1) == (idx - 1)).sum().item()
-
-        # epoch별 test 출력
-        for name in models.keys():
-            avg_loss = total_loss_dict[name] / total_test_samples
-            avg_acc  = total_acc_dict[name] / total_test_samples
-            print(f" {name}: loss - {avg_loss:.4f}, accuracy - {avg_acc:.4f}")
-            
-            test_loss_history[name].append(avg_loss)
-            test_acc_history[name].append(avg_acc)
-            # -----------------------
-            #  최고 정확도 갱신 시 가중치 저장
-            # -----------------------
-            if avg_acc > best_acc[name]:
-                best_acc[name] = avg_acc
-                save_dir = Path("./output/model_weights/")
-                if not save_dir.exists():
-                    save_dir.mkdir(parents=True)
-
-                save_path = save_dir / f"best_{name}_model_banila_all.pt"
-                torch.save(models[name].state_dict(), save_path)
-                print(f"   ↳ Saved new best model for {name} (acc={avg_acc:.4f}) → {save_path}")
+        f1 = f1_score(true_dict[name], np.array(pred_dict[name]).argmax(axis=1), average='weighted')
+        print(f" {name}: loss - {avg_loss:.4f}, accuracy - {avg_acc:.4f}")
+        print(f" {name}: F1 Score - {f1:.4f}")
+        # test_loss_history[name].append(avg_loss)
+        # test_acc_history[name].append(avg_acc)
 
 # %%
