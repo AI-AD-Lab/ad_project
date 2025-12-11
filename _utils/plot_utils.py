@@ -3,10 +3,22 @@ import pandas as pd
 import numpy as np
 
 import matplotlib.pyplot as plt
-
 from matplotlib import colors as mcolors
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
+from matplotlib.patches import Rectangle
+
+import seaborn as sns
+
+
+
+plt.rcParams['font.family'] = 'Times New Roman'
+plt.rcParams['font.size'] = 12
+plt.rcParams['font.weight'] = 'bold'
+plt.rcParams['mathtext.fontset'] = 'custom'
+plt.rcParams['mathtext.rm'] = 'Times New Roman'
+plt.rcParams['mathtext.it'] = 'Times New Roman:italic'
+plt.rcParams['mathtext.bf'] = 'Times New Roman:bold'
 
 
 # Simple DataFrame 2d plot
@@ -299,6 +311,111 @@ class driving_trajectory_plotter:
                 plt.close(fig_trajectory)
             else:
                 plt.show()
+
+
+def plot_pretty_broken_hist(y):
+    y = np.array(y) / 50
+    bin_width = 2
+    bins = np.arange(0, y.max() + bin_width, bin_width)
+    counts, edges = np.histogram(y, bins=bins)
+
+    fig, (ax1, ax2) = plt.subplots(
+        1, 2, sharey=True, figsize=(8, 3.8),
+        gridspec_kw={'wspace': 0.06, 'width_ratios': [3, 2]}
+    )
+
+    # left and right axes common settings
+    for ax in (ax1, ax2):
+        ax.grid(True, axis='y', linestyle='--', alpha=0.35)
+        ax.tick_params(labelsize=10)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(True)
+
+    # histogram bars
+    color = '#1f77b4'
+    ax1.bar(edges[:-1], counts, width=bin_width*0.85,
+            color=color, alpha=0.8, edgecolor='black', linewidth=0.6)
+    ax2.bar(edges[:-1], counts, width=bin_width*0.85,
+            color=color, alpha=0.8, edgecolor='black', linewidth=0.6)
+
+    ax1.set_xlim(0, 55)
+    ax2.set_xlim(145, 185)
+
+    # elimenate unnecessary spines and ticks
+    ax1.spines['right'].set_visible(False)  
+    ax2.spines['left'].set_visible(False)   
+    ax2.tick_params(labelleft=False)     
+
+    # break mark settings
+    pos1 = ax1.get_position()
+    pos2 = ax2.get_position()
+    cx = (pos1.x1 + pos2.x0)/2.0 + 0.002             
+    bottom_y = pos1.y0
+
+    gap_x = pos1.x1
+    gap_w = (pos2.x0 - pos1.x1)
+    offset = 0.002
+
+    # eliminate unnecessary spines and ticks
+    fig.add_artist(Rectangle((gap_x + offset, 0.2), gap_w, 0.65,
+                            transform=fig.transFigure,
+                            facecolor='white', edgecolor='none',
+                            zorder=5))
+    # add '~' symbol between axes to indicate break at the bottom
+    fig.text(cx, bottom_y, '≈', rotation=90, ha='center', va='center',
+             fontsize=14, weight='bold', clip_on=False)
+
+    fig.text(0.5, -0.02, 'Duration (s)', ha='center', fontsize=20)
+    ax1.set_ylabel('Number of Samples', fontsize=20, fontweight='bold')
+
+    axis_font_size = 14
+    ax1.tick_params(axis='y', labelsize=axis_font_size)
+    ax1.tick_params(axis='x', labelsize=axis_font_size)
+    ax2.tick_params(axis='x', labelsize=axis_font_size)
+
+    for ax in (ax1, ax2):
+        ax.grid(False)  # 전체 격자 제거
+        ax.grid(True, axis='y', linestyle='--', alpha=0.35, clip_on=False)
+
+    plt.tight_layout(rect=[0.02, 0.04, 0.98, 1.0])
+    # plt.subplots_adjust(bottom=0.18, top=0.95, left=0.08, right=0.98, wspace=0.08)
+    plt.show()
+
+
+def plot_correlation_heatmap(df, method='pearson', figsize=(8, 6), cmap='coolwarm', title=None):
+
+    # select numeric columns
+    df_numeric = df.select_dtypes(include=[np.number])
+
+    if df_numeric.empty:
+        raise ValueError("No numeric columns found in the DataFrame.")
+
+    # compute correlation matrix
+    corr_df = df_numeric.corr(method=method)
+
+    #  plot heatmap
+    plt.figure(figsize=figsize)
+    sns.heatmap(
+        corr_df,
+        annot=True,        
+        fmt=".2f",      
+        cmap=cmap,
+        vmin=-1, vmax=1,
+        square=True,
+        cbar_kws={"shrink": 0.8}
+    )
+
+
+    plt.title(title or f"Correlation Matrix ({method.title()})", fontsize=14, fontweight='bold', fontname='Times New Roman')
+    plt.xticks(fontname='Times New Roman', fontsize=10, rotation=45)
+    plt.yticks(fontname='Times New Roman', fontsize=10, rotation=0)
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+    return corr_df
+
+
 
 
 

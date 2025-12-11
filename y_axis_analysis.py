@@ -78,7 +78,6 @@ if __name__ == "__main__":
             max_vel = int(round(max_vel_raw / 5.0) * 5)
             type_file_vel.append([cls, type_file, max_vel])
     
-    #%%
     save_dir = GRANDPARENTS_DIR / 'trajectory_stratelog_with_velocity'
     if not os.path.exists(save_dir):
         save_dir.mkdir(parents=True, exist_ok=True)
